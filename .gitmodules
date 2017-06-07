@@ -1,0 +1,12 @@
+[submodule "3rdparty/easyloggingpp"]
+	path = 3rdparty/easyloggingpp
+	url = https://github.com/muflihun/easyloggingpp.git
+[submodule "3rdparty/eigen"]
+	path = 3rdparty/eigen
+	url = https://github.com/RLovelett/eigen.git
+[submodule "3rdparty/better-enums"]
+	path = 3rdparty/better-enums
+	url = https://github.com/aantron/better-enums.git
+[submodule "3rdparty/mnist"]
+	path = 3rdparty/mnist
+	url = https://github.com/wichtounet/mnist.git
