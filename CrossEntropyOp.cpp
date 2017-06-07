@@ -13,7 +13,6 @@ static void XEOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs,
 
   auto batchSize = inputs[0].attr_->dims_[0];
   auto featureSize = inputs[0].attr_->dims_[1];
-  LOG(INFO) << "feature size = " << featureSize;
 
   for (decltype(batchSize) i = 0; i < batchSize; ++i) {
     auto label = l[i];
@@ -42,7 +41,7 @@ static void XEOpGradImpl(const SmallVec<Tensor> &inputs,
   }
   auto GO = castToEigenArray1D(inputs[2]);  // coeff
   auto GI = castToEigenArray2DMutable(outputs[0]);
-  GI.rowwise() *= GO.transpose();
+  GI.colwise() *= GO;
 }
 
 static void XEGradShapeImpl(const SmallVec<graph::TensorAttr *> &inputs,

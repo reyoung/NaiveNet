@@ -92,19 +92,20 @@ class GraphBuilder {
 
     auto paramTensor = addTensor<float>(paramPrefix + ".param.weight.0",
                                         {layerWidth, size}, true);
-    auto tmpMulOut = addTensor<float>(paramPrefix + ".tmp.0", {0}, true);
-    addOp("mul", {input, paramTensor}, {tmpMulOut});
-
+    SmallVec<graph::TensorAttr*> inputs = {input, paramTensor, nullptr};
     if (withBias) {
       auto biasTensor =
           addTensor<float>(paramPrefix + ".param.bias", {size, 1}, true);
-      auto out = addTensor<float>(paramPrefix + ".tmp.1", {0}, true);
-      addOp("add_bias", {tmpMulOut, biasTensor}, {out});
-      tmpMulOut = out;
+      inputs.back() = biasTensor;
     }
 
+    auto fcOpOut = addTensor<float>(paramPrefix + "fc.output",  {0}, true);
+
+    addOp("fc", inputs, {fcOpOut});
+
     auto finalOutput = addTensor<float>(paramPrefix + ".output", {0}, true);
-    addOp(toString(act), {tmpMulOut}, {finalOutput});
+
+    addOp(toString(act), {fcOpOut}, {finalOutput});
     return finalOutput;
   }
 
@@ -113,6 +114,10 @@ class GraphBuilder {
     CHECK_EQ(loss->type_, graph::kTENSOR_FLOAT32) << "loss must be float32";
     CHECK_EQ(details::product(loss->dims_), 1)
         << "loss must be scalar, i.e. dim = 1";
+    auto lossGradTensor = addTensor<float>(loss->name_ + ".grad", {1, 1}, true);
+    lossGradTensor->specialResetFunction_ = [](graph::Tensor t) {
+      *(float*)(t.buffer_->get()) = 1.0;
+    };
 
     size_t fwdSize = graph_->ops_.size();
 
@@ -124,10 +129,8 @@ class GraphBuilder {
           [&needGrad](graph::TensorAttr* t) -> graph::TensorAttr* {
         if (t->need_backward_) {
           needGrad = true;
-          return t;
-        } else {
-          return nullptr;
         }
+            return t;
       };
 
       SmallVec<graph::TensorAttr*> outputs;
@@ -151,7 +154,7 @@ class GraphBuilder {
       // 1. get output g.
       SmallVec<graph::TensorAttr*> outputsGrad;
       for (auto& o : outputs) {
-        if (o == nullptr) {
+        if (!o->need_backward_) {
           outputsGrad.push_back(nullptr);
         } else {
           outputsGrad.push_back(this->addTensorImpl(o->name_ + ".grad",
@@ -162,7 +165,7 @@ class GraphBuilder {
       // 2. get input g.
       SmallVec<graph::TensorAttr*> inputsGrad;
       for (auto& ipt : inputs) {
-        if (ipt == nullptr) {
+        if (!ipt->need_backward_) {
           inputsGrad.push_back(nullptr);
         } else {
           inputsGrad.push_back(this->addTensorImpl(
@@ -217,7 +220,7 @@ class GraphBuilder {
 int main() {
   nnet::util::InitFunction::apply();
   nnet::graph::Graph g;
-  constexpr size_t BATCH_SIZE = 1000;
+  constexpr size_t BATCH_SIZE = 1;
   auto buffer = nnet::memory::TensorBuffer::newBuffer<float>(
       "X", {BATCH_SIZE, 784}, nnet::memory::kDEVICE_CPU);
   nnet::api::GraphBuilder builder(&g);
@@ -234,7 +237,7 @@ int main() {
   auto loss = builder.crossEntropy("xe_loss", prediction, labelTensor);
   auto avgLoss = builder.mean("avg_loss", loss);
 
-  //  builder.backward(avgLoss);
+  builder.backward(avgLoss);
 
   nnet::engine::NaiveEngine engine(g);
   engine.randomize();
@@ -257,14 +260,16 @@ int main() {
     inputTensor.buffer_ = buffer;
     inputTensor.attr_ = xTensor;
     nnet::engine::castToEigenArray2DMutable(inputTensor) /= 255.0;
+    engine.resetOrCreateGradient();
     engine.run(false);
-
+//    engine.printMean();  // print mean grad of params
     nnet::engine::Tensor lossMemTensor;
     lossMemTensor.buffer_ =
         nnet::memory::TensorBuffer::gTensorBuffers.at(avgLoss->name_);
     lossMemTensor.attr_ = avgLoss;
     auto m = nnet::engine::castToEigenArray1D(lossMemTensor);
     LOG(INFO) << "Loss = " << *m.data();
+
   }
 
   return 0;

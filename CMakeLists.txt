@@ -10,6 +10,6 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/mnist/include)
 add_definitions(-DELPP_FEATURE_ALL)
 set(EASYLOGGINGPP_SRC ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/easyloggingpp/src/easylogging++.cc)
 set(SOURCE_FILES ${EASYLOGGINGPP_SRC} main.cpp ComputationGraph.cpp Error.h
-        Register.h MulOp.cpp AddOp.cpp SigmoidOp.cpp
+        Register.h SigmoidOp.cpp FullyConnectedOp.cpp
         TensorBuffer.cpp TensorBuffer.h Engine.cpp Typedef.h SoftmaxOp.cpp CrossEntropyOp.cpp MeanOp.cpp)
 add_executable(NaiveNet ${SOURCE_FILES})

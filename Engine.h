@@ -12,6 +12,11 @@ inline Eigen::Map<const Eigen::VectorXf> castToEigenVec(const Tensor& tensor) {
       reinterpret_cast<float*>(tensor.buffer_->get()), tensor.attr_->dims_[0]);
 }
 
+inline Eigen::Map<Eigen::VectorXf> castToEigenVecMutable(const Tensor& tensor) {
+  return Eigen::Map<Eigen::VectorXf>(
+      reinterpret_cast<float*>(tensor.buffer_->get()), tensor.attr_->dims_[0]);
+}
+
 inline Eigen::Map<const Eigen::MatrixXf> castToEigenMat(const Tensor& tensor) {
   CHECK_EQ(tensor.attr_->dims_.size(), 2UL);
   return Eigen::Map<const Eigen::MatrixXf>(
@@ -75,14 +80,27 @@ class Engine {
   virtual ~Engine() {}
 
   virtual void randomize(NameMappingFN fn = nullptr) const = 0;
+  virtual void resetOrCreateGradient(NameMappingFN fn = nullptr) const = 0;
+  virtual void printMean(NameMappingFN fn = nullptr) const = 0;
   virtual void run(bool debug = false) const = 0;
 
  public:
   std::unique_ptr<Tensor> getParamInGraph(const std::string& name) {
-    if (boost::algorithm::contains(name, ".param")) {
+    if (boost::algorithm::contains(name, ".param") && !boost::algorithm::contains(name, ".grad")) {
       auto t = new Tensor();
       t->buffer_ = memory::TensorBuffer::gTensorBuffers[name];
       t->attr_ = &graph_.tensors_.at(name);
+      return std::unique_ptr<Tensor>(t);
+    } else {
+      return nullptr;
+    }
+  }
+
+  std::unique_ptr<Tensor> getGradInGraph(const std::string& name) {
+    if (boost::algorithm::contains(name, ".grad")) {
+      auto t = new Tensor();
+      t->attr_ = &graph_.tensors_.at(name);
+      t->buffer_ = memory::TensorBuffer::tryAllocBuffer<float>(t->attr_->name_, t->attr_->dims_);
       return std::unique_ptr<Tensor>(t);
     } else {
       return nullptr;
@@ -98,7 +116,13 @@ class NaiveEngine : public Engine {
   NaiveEngine(const graph::Graph& graph) : Engine{graph} {}
 
   void randomize(Engine::NameMappingFN fn = nullptr) const override;
-  void run(bool debug) const override;
+  void resetOrCreateGradient(NameMappingFN fn = nullptr) const override;
+  void run(bool debug = false) const override;
+  void printMean(NameMappingFN fn = nullptr) const override;
+
+
+ private:
+  void accessTensor(NameMappingFN fn, std::function<void(Tensor&)> tensorFN) const;
 };
 }
 }

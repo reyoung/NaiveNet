@@ -12,6 +12,7 @@ namespace graph {
 using memory::Device;
 using memory::kDEVICE_GPU;
 using memory::kDEVICE_CPU;
+using memory::kDEVICE_DEBUG;
 using memory::kNUM_DEVICES;
 
 namespace error {
@@ -97,20 +98,25 @@ class AttributeMeta final {
 };
 
 enum TensorType : size_t { kTENSOR_FLOAT32 = 0, kTENSOR_INT32 = 1 };
-
-class TensorAttr final {
- public:
-  std::string name_;
-  bool need_backward_{false};
-  SmallVec<size_t> dims_;
-  TensorType type_;
-};
+class TensorAttr;
 
 class Tensor final {
  public:
   TensorAttr* attr_;
   std::shared_ptr<memory::TensorBuffer> buffer_;
 };
+
+class TensorAttr final {
+ public:
+  using InitializeFN = std::function<void(Tensor)>;
+  std::string name_;
+  bool need_backward_{false};
+  SmallVec<size_t> dims_;
+  TensorType type_;
+  InitializeFN specialResetFunction_;
+};
+
+
 
 class Op final {
  public:
@@ -143,14 +149,14 @@ class OpMeta final {
   static Map<std::string, OpMeta> gAllOpMeta_;
 };
 
-class GraphMeta final {
- public:
-};
-
 class Graph final {
  public:
   Map<std::string, TensorAttr> tensors_;
   SmallVecN<Op, 10> ops_;
 };
+
+using CompileGraphFN = std::function<Graph (const Graph&)>;
+
+
 }
 }

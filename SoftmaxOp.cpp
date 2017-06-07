@@ -26,12 +26,16 @@ static void softmaxShapeImpl(const SmallVec<graph::TensorAttr *> &inputs,
 static void softmaxGradImpl(const SmallVec<Tensor> &inputs,
                             SmallVec<Tensor> &outputs,
                             const Map<std::string, Any> &attrs) {
-  auto P = castToEigenArray2D(inputs[0]);
-  auto OG = castToEigenArray2D(inputs[1]);
-  auto IG = castToEigenArray2DMutable(outputs[0]);
+  auto P = castToEigenMat(inputs[0]);
+  auto OG = castToEigenMat(inputs[1]);
+  auto IG = castToEigenMatMutable(outputs[0]);
+
   IG = OG;
-  IG.colwise() -= P.rowwise().sum();
-  IG *= P;
+  Eigen::MatrixXf mat(OG.rows(), OG.cols());
+  mat = OG;
+  mat.array() *= P.array();  // elemwise mul
+  IG.rowwise() -= mat.colwise().sum();
+  IG = IG.array() * P.array(); // elemwise mul
 }
 static void softmaxGradShapeImpl(const SmallVec<graph::TensorAttr *> &inputs,
                                  const SmallVec<graph::TensorAttr *> &outputs) {
@@ -48,7 +52,7 @@ static SmallVec<graph::Op> GetSoftmaxGradOp(
     const SmallVec<graph::TensorAttr *> &OG,
     const SmallVec<graph::TensorAttr *> &IG) {
   graph::Op op;
-  op.type_ = "mean_grad";
+  op.type_ = "softmax_grad";
   op.inputs_ = {O[0], OG[0]};
   op.outputs_ = {IG[0]};
 

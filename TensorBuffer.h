@@ -13,7 +13,7 @@
 namespace nnet {
 namespace memory {
 
-enum Device : int { kDEVICE_CPU = 0, kDEVICE_GPU = 1, kNUM_DEVICES = 2 };
+enum Device : int { kDEVICE_CPU = 0, kDEVICE_GPU = 1, kDEVICE_DEBUG, kNUM_DEVICES };
 
 class TensorBuffer {
  public:
