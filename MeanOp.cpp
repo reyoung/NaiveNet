@@ -8,14 +8,14 @@ static void MeanOpImpl(const SmallVec<Tensor> &inputs,
                        SmallVec<Tensor> &outputs,
                        const Map<std::string, Any> &attrs) {
   auto i = castToEigenArray1D(inputs[0]);
-  *(float*)(outputs[0].buffer_->get()) = i.mean();
+  *(float *)(outputs[0].buffer_->get()) = i.mean();
 }
 
-static void MeanGradImpl(const SmallVec<Tensor>& inputs,
-                         SmallVec<Tensor>& outputs,
-                         const Map<std::string, Any>& attrs) {
-  auto og = castToEigenArray1D(inputs[1]); // output grad;
-  auto ig = castToEigenArray1DMutable(outputs[0]); // input grad;
+static void MeanGradImpl(const SmallVec<Tensor> &inputs,
+                         SmallVec<Tensor> &outputs,
+                         const Map<std::string, Any> &attrs) {
+  auto og = castToEigenArray1D(inputs[1]);          // output grad;
+  auto ig = castToEigenArray1DMutable(outputs[0]);  // input grad;
   float g = *og.data();
   ig = g / ig.size();
 }
@@ -33,10 +33,10 @@ static void MeanShapeImpl(const SmallVec<graph::TensorAttr *> &inputs,
 }
 
 static SmallVec<graph::Op> GetMeanGradOp(
-    const SmallVec<graph::TensorAttr*>& I,
-    const SmallVec<graph::TensorAttr*>& O,
-    const SmallVec<graph::TensorAttr*>& OG,
-    const SmallVec<graph::TensorAttr*>& IG) {
+    const SmallVec<graph::TensorAttr *> &I,
+    const SmallVec<graph::TensorAttr *> &O,
+    const SmallVec<graph::TensorAttr *> &OG,
+    const SmallVec<graph::TensorAttr *> &IG) {
   graph::Op op;
   op.type_ = "mean_grad";
   op.inputs_ = {I[0], OG[0]};
@@ -45,7 +45,7 @@ static SmallVec<graph::Op> GetMeanGradOp(
   return {op};
 }
 
-static util::InitFunction init([]{
+static util::InitFunction init([] {
   {
     graph::OpMeta meta;
     meta.type_ = "mean";
@@ -62,6 +62,5 @@ static util::InitFunction init([]{
     graph::OpMeta::gAllOpMeta_[gradMeta.type_] = gradMeta;
   }
 });
-
 }
 }

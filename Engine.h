@@ -12,7 +12,6 @@ inline Eigen::Map<const Eigen::VectorXf> castToEigenVec(const Tensor& tensor) {
       reinterpret_cast<float*>(tensor.buffer_->get()), tensor.attr_->dims_[0]);
 }
 
-
 inline Eigen::Map<const Eigen::MatrixXf> castToEigenMat(const Tensor& tensor) {
   CHECK_EQ(tensor.attr_->dims_.size(), 2UL);
   return Eigen::Map<const Eigen::MatrixXf>(

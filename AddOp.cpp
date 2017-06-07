@@ -2,8 +2,9 @@
 #include "Register.h"
 namespace nnet {
 namespace engine {
-static void addBiasOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs,
-                      const Map<std::string, Any> &attrs) {
+static void addBiasOpImpl(const SmallVec<Tensor> &inputs,
+                          SmallVec<Tensor> &outputs,
+                          const Map<std::string, Any> &attrs) {
   auto a = castToEigenMat(inputs[0]);
   auto b = castToEigenVec(inputs[1]);
   auto o = castToEigenMatMutable(outputs[0]);
@@ -11,8 +12,9 @@ static void addBiasOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outp
   o.rowwise() += b.transpose();
 }
 
-static void addBiasShapeInfererImpl(const SmallVec<graph::TensorAttr *> &inputs,
-                                const SmallVec<graph::TensorAttr *> &outputs) {
+static void addBiasShapeInfererImpl(
+    const SmallVec<graph::TensorAttr *> &inputs,
+    const SmallVec<graph::TensorAttr *> &outputs) {
   outputs[0]->dims_ = inputs[0]->dims_;
   CHECK_EQ(inputs[0]->dims_, outputs[0]->dims_);
 }

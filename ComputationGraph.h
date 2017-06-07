@@ -130,8 +130,7 @@ class OpMeta final {
                                            const Map<std::string, Any> attrs)>;
 
   using GradFN = std::function<SmallVec<Op>(
-      const SmallVec<TensorAttr*>& inputs,
-      const SmallVec<TensorAttr*>& outputs,
+      const SmallVec<TensorAttr*>& inputs, const SmallVec<TensorAttr*>& outputs,
       const SmallVec<TensorAttr*>& outputsGrad,
       const SmallVec<TensorAttr*>& inputsGrad)>;
 
