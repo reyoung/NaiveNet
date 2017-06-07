@@ -1,6 +1,7 @@
 #pragma once
 #include <boost/any.hpp>
 #include <boost/container/small_vector.hpp>
+#include <iostream>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -28,6 +29,19 @@ bool operator==(const SmallVec<T>& vec1, const SmallVec<T>& vec2) {
     }
   }
   return true;
+}
+
+template <typename T>
+inline std::ostream& operator<<(std::ostream& sout, const SmallVec<T>& v) {
+  sout << "(";
+  if (!v.empty()) {
+    sout << v[0];
+    for (size_t i = 1; i < v.size(); ++i) {
+      sout << "," << v[i];
+    }
+  }
+  sout << ")";
+  return sout;
 }
 
 template <typename T1>

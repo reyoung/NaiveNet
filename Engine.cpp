@@ -56,11 +56,11 @@ void NaiveEngine::run(bool debug) const {
     std::ostringstream sout;
     sout << " From: ";
     for (auto& i : op.inputs_) {
-      sout << i->name_ << "(" << i->dims_[0] << "," << i->dims_[1] << ")";
+      sout << i->name_ << i->dims_ << " ";
     }
-    sout << "->";
+    sout << "-> ";
     for (auto& o : op.outputs_) {
-      sout << o->name_ << "(" << o->dims_[0] << "," << o->dims_[1] << ")";
+      sout << o->name_ << o->dims_ << " ";
     }
 
     LOG(INFO) << "Performing " << op.type_ << sout.str();
