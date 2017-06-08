@@ -19,7 +19,7 @@ void NaiveEngine::randomize(Engine::NameMappingFN fn) const {
 
   this->accessTensor(fn, [](Tensor& tensor) {
     std::uniform_real_distribution<float> generator(-1.0, 1.0);
-    LOG(DEBUG) << "Randomize " << tensor.attr_->name_;
+    LOG(INFO) << "Randomize " << tensor.attr_->name_;
     float* buf = (float*)tensor.buffer_->get();
     for (size_t i = 0; i < tensor.buffer_->getSize() / sizeof(float); ++i) {
       buf[i] = generator(getGenerator());
@@ -32,10 +32,7 @@ void NaiveEngine::resetOrCreateGradient(Engine::NameMappingFN fn) const {
     fn = castFN(&Engine::getGradInGraph);
   }
   this->accessTensor(fn, [](Tensor& tensor) {
-    //      LOG(DEBUG) << "Resetting buffer " << tensor.attr_->name_;
     if (tensor.attr_->specialResetFunction_) {
-      //        LOG(DEBUG) << "Special init gradient buffer " <<
-      //        tensor.attr_->name_;
       tensor.attr_->specialResetFunction_(tensor);
     } else {
       auto tensorArray = engine::castToEigenArray1DMutable(tensor);
