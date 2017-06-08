@@ -33,7 +33,6 @@ static void FCGradOpImpl(const SmallVec<Tensor> &inputs,
   auto GW = castToEigenMatMutable(outputs[0]);
   // backward mul
   GW = X.transpose() * GO;
-  LOG(INFO) << "GO "<< inputs[2].attr_->name_ <<" mean " << GO.mean();
 
   if (outputs[1].attr_ != nullptr) {
     auto GX = castToEigenMatMutable(outputs[1]);

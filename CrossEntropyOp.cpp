@@ -50,7 +50,7 @@ static void XEGradShapeImpl(const SmallVec<graph::TensorAttrPtr> &inputs,
   auto P = inputs[0];
   auto L = inputs[1];
   auto GO = inputs[2];
-  auto GI = outputs[3];
+  auto GI = outputs[0];
 
   CHECK_EQ(P->dims_[0], details::product(L->dims_));
   CHECK_EQ(P->dims_[0], GO->dims_[0]);

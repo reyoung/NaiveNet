@@ -13,7 +13,7 @@
 namespace nnet {
 namespace memory {
 
-enum Device : int { kDEVICE_CPU = 0, kDEVICE_GPU = 1, kDEVICE_DEBUG, kNUM_DEVICES };
+enum Device : int { kDEVICE_CPU = 0, kDEVICE_GPU = 1, kNUM_DEVICES };
 
 class TensorBuffer {
  public:
@@ -24,6 +24,7 @@ class TensorBuffer {
   virtual Device device() const = 0;
   virtual void copyFrom(const TensorBuffer& o, size_t elemSize = 0,
                         size_t sliceBegin = 0, size_t sliceEnd = 0) = 0;
+  virtual void resize(size_t newSize) = 0;
 
   void* get() const { return buf_; }
 
@@ -34,26 +35,26 @@ class TensorBuffer {
                                                  Container dims, Device dev);
 
   template <typename T, typename Container = std::initializer_list<size_t>>
-  static std::shared_ptr<TensorBuffer> tryAllocBuffer(
-      const std::string& name, Container dims, Device dev = kDEVICE_CPU) {
+  static std::shared_ptr<TensorBuffer> createOrResizeBuffer(
+      const std::string &name, Container dims, Device dev = kDEVICE_CPU) {
     auto it = memory::TensorBuffer::gTensorBuffers.find(name);
     if (it == memory::TensorBuffer::gTensorBuffers.end()) {
       return memory::TensorBuffer::newBuffer<T>(name, dims, dev);
     } else {
-      CHECK_EQ(it->second->getSize(), sizeof(T) * details::product(dims));
+      it->second->resize(sizeof(T)*details::product(dims));
       return it->second;
     }
   }
 
   size_t getSize() const { return size_; }
 
-  size_t getCapacity() const { return capacity_; }
-
  protected:
   void* buf_{nullptr};
   size_t size_{0};
   size_t capacity_{0};
 };
+
+using TensorBufferPtr = std::shared_ptr<TensorBuffer>;
 
 class CpuTensorBuffer : public TensorBuffer {
  public:
@@ -66,6 +67,16 @@ class CpuTensorBuffer : public TensorBuffer {
   ~CpuTensorBuffer() { free(buf_); }
 
   Device device() const override { return kDEVICE_CPU; }
+
+  void resize(size_t newSize) override {
+    if (newSize > capacity_) {
+      void* tmp;
+      CHECK_EQ(posix_memalign(&tmp, 32UL, newSize), 0);
+      free(buf_);
+      buf_ = tmp;
+    }
+    size_ = newSize;
+  }
 
   void copyFrom(const TensorBuffer& o, size_t elemSize = 0,
                 size_t sliceBegin = 0, size_t sliceEnd = 0) override {

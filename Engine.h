@@ -100,7 +100,7 @@ class Engine {
     if (boost::algorithm::contains(name, ".grad")) {
       auto t = new Tensor();
       t->attr_ = graph_.tensors_.at(name);
-      t->buffer_ = memory::TensorBuffer::tryAllocBuffer<float>(t->attr_->name_, t->attr_->dims_);
+      t->buffer_ = memory::TensorBuffer::createOrResizeBuffer<float>(t->attr_->name_, t->attr_->dims_);
       return std::unique_ptr<Tensor>(t);
     } else {
       return nullptr;
@@ -108,7 +108,7 @@ class Engine {
   }
 
  protected:
-  graph::Graph graph_;
+  const graph::Graph& graph_;
 };
 
 class NaiveEngine : public Engine {

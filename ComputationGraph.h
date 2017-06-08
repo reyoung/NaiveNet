@@ -12,7 +12,6 @@ namespace graph {
 using memory::Device;
 using memory::kDEVICE_GPU;
 using memory::kDEVICE_CPU;
-using memory::kDEVICE_DEBUG;
 using memory::kNUM_DEVICES;
 
 namespace error {
@@ -172,6 +171,7 @@ class Graph final {
  public:
   Map<std::string, TensorAttrPtr> tensors_;
   SmallVecN<Op, 10> ops_;
+  Map<std::string, memory::TensorBufferPtr> buffers_;
 
   template <bool failWhenMismatchDims=false>
   TensorAttrPtr createOrGetTensor(const std::string& name,
@@ -195,8 +195,15 @@ class Graph final {
   }
 };
 
-using CompileGraphFN = std::function<Graph (const Graph&)>;
+using CompileGraphFN = std::function<void (Graph&, const Map<std::string, Any >&)>;
 extern Map<std::string, CompileGraphFN >& compilers();
+inline void compileGraph(Graph* g,
+                         const SmallVec<std::string>& stages,
+                         const Map<std::string, Any >& attrs = Map<std::string, Any>()) {
+  for (auto& key : stages) {
+    compilers().at(key)(*g, attrs);
+  }
+}
 
 }
 }

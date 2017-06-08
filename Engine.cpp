@@ -52,18 +52,22 @@ static SmallVec<Tensor> toTensor(const SmallVec<graph::TensorAttrPtr>& tensors) 
     if (ipt.attr_ == nullptr) {
       ipt.buffer_ = nullptr;
     } else if (ipt.attr_->type_ == graph::kTENSOR_FLOAT32) {
-      ipt.buffer_ = memory::TensorBuffer::tryAllocBuffer<float>(iptAttr->name_,
-                                                                iptAttr->dims_);
+      ipt.buffer_ = memory::TensorBuffer::createOrResizeBuffer<float>(iptAttr->name_,
+                                                                      iptAttr->dims_);
     } else if (ipt.attr_->type_ == graph::kTENSOR_INT32) {
-      ipt.buffer_ = memory::TensorBuffer::tryAllocBuffer<int>(iptAttr->name_,
-                                                              iptAttr->dims_);
+      ipt.buffer_ = memory::TensorBuffer::createOrResizeBuffer<int>(iptAttr->name_,
+                                                                    iptAttr->dims_);
     }
   }
   return retv;
 }
 
 void NaiveEngine::run(bool debug) const {
-  for (auto& op : graph_.ops_) {
+  graph::Graph g = graph_;
+  // Every mini-batch, shape could be changed.
+  graph::compileGraph(&g, {"inferenceShape", "requestResource"});
+
+  for (auto& op : g.ops_) {
     auto& meta = graph::OpMeta::gAllOpMeta_[op.type_];
     auto ipt = toTensor(op.inputs_);
     auto opt = toTensor(op.outputs_);
