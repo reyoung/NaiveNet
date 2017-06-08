@@ -43,7 +43,7 @@ void NaiveEngine::resetOrCreateGradient(Engine::NameMappingFN fn) const {
   });
 }
 
-static SmallVec<Tensor> toTensor(const SmallVec<graph::TensorAttr*>& tensors) {
+static SmallVec<Tensor> toTensor(const SmallVec<graph::TensorAttrPtr>& tensors) {
   SmallVec<Tensor> retv;
   for (auto iptAttr : tensors) {
     retv.emplace_back();

@@ -24,21 +24,21 @@ static void sigmoidOpGrad(const SmallVec<Tensor>& inputs,
   IG *= 1 - O * O;
 }
 
-static void sigmoidOpGradShape(const SmallVec<graph::TensorAttr *> &inputs,
-                               const SmallVec<graph::TensorAttr *> &outputs) {
+static void sigmoidOpGradShape(const SmallVec<graph::TensorAttrPtr> &inputs,
+                               const SmallVec<graph::TensorAttrPtr> &outputs) {
   outputs[0]->dims_ = inputs[0]->dims_;
 }
 
-static void sigmoidShapeImpl(const SmallVec<graph::TensorAttr *> &inputs,
-                             const SmallVec<graph::TensorAttr *> &outputs) {
+static void sigmoidShapeImpl(const SmallVec<graph::TensorAttrPtr> &inputs,
+                             const SmallVec<graph::TensorAttrPtr> &outputs) {
   outputs[0]->dims_ = inputs[0]->dims_;
 }
 
 static SmallVec<graph::Op> GetSigmoidGradImpl(
-    const SmallVec<graph::TensorAttr *> &I,
-    const SmallVec<graph::TensorAttr *> &O,
-    const SmallVec<graph::TensorAttr *> &OG,
-    const SmallVec<graph::TensorAttr *> &IG) {
+    const SmallVec<graph::TensorAttrPtr> &I,
+    const SmallVec<graph::TensorAttrPtr> &O,
+    const SmallVec<graph::TensorAttrPtr> &OG,
+    const SmallVec<graph::TensorAttrPtr> &IG) {
   graph::Op op;
   op.type_ = "sigmoid_grad";
   op.inputs_ = {O[0], OG[0]};

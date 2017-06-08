@@ -21,8 +21,8 @@ static void XEOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs,
   }
 }
 
-static void XEShapeImpl(const SmallVec<graph::TensorAttr *> &inputs,
-                        const SmallVec<graph::TensorAttr *> &outputs) {
+static void XEShapeImpl(const SmallVec<graph::TensorAttrPtr> &inputs,
+                        const SmallVec<graph::TensorAttrPtr> &outputs) {
   CHECK_EQ(inputs[0]->dims_[0], inputs[1]->dims_[0]);
   CHECK_EQ(inputs[1]->type_, graph::kTENSOR_INT32);
   outputs[0]->dims_ = {inputs[0]->dims_[0], 1};
@@ -44,8 +44,8 @@ static void XEOpGradImpl(const SmallVec<Tensor> &inputs,
   GI.colwise() *= GO;
 }
 
-static void XEGradShapeImpl(const SmallVec<graph::TensorAttr *> &inputs,
-                            const SmallVec<graph::TensorAttr *> &outputs) {
+static void XEGradShapeImpl(const SmallVec<graph::TensorAttrPtr> &inputs,
+                            const SmallVec<graph::TensorAttrPtr> &outputs) {
   CHECK_EQ(inputs.size(), 3UL);
   auto P = inputs[0];
   auto L = inputs[1];
@@ -58,10 +58,10 @@ static void XEGradShapeImpl(const SmallVec<graph::TensorAttr *> &inputs,
 }
 
 static SmallVec<graph::Op> GetXeGradOp(
-    const SmallVec<graph::TensorAttr *> &I,
-    const SmallVec<graph::TensorAttr *> &O,
-    const SmallVec<graph::TensorAttr *> &OG,
-    const SmallVec<graph::TensorAttr *> &IG) {
+    const SmallVec<graph::TensorAttrPtr> &I,
+    const SmallVec<graph::TensorAttrPtr> &O,
+    const SmallVec<graph::TensorAttrPtr> &OG,
+    const SmallVec<graph::TensorAttrPtr> &IG) {
   graph::Op op;
   op.type_ = "cross_entropy_grad";
   op.inputs_ = {I[0], I[1], OG[0]};

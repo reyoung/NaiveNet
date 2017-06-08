@@ -30,8 +30,8 @@ class GraphBuilder {
   explicit inline GraphBuilder(graph::Graph* g) : graph_(g) {}
 
   void addOp(const std::string& type,
-             const SmallVec<graph::TensorAttr*>& inputs,
-             const SmallVec<graph::TensorAttr*>& outputs,
+             const SmallVec<graph::TensorAttrPtr>& inputs,
+             const SmallVec<graph::TensorAttrPtr>& outputs,
              const Map<std::string, Any>& attrs = Map<std::string, Any>()) {
     this->graph_->ops_.emplace_back();
     graph::Op& op = this->graph_->ops_.back();
@@ -46,23 +46,23 @@ class GraphBuilder {
     }
   }
 
-  graph::TensorAttr* crossEntropy(const std::string& paramPrefix,
-                                  graph::TensorAttr* input,
-                                  graph::TensorAttr* label) {
-    auto loss = graph_->createOrGetTensor(paramPrefix + ".output", {0}, true, graph::kTENSOR_FLOAT32).get();
+  graph::TensorAttrPtr crossEntropy(const std::string& paramPrefix,
+                                  graph::TensorAttrPtr input,
+                                  graph::TensorAttrPtr label) {
+    auto loss = graph_->createOrGetTensor(paramPrefix + ".output", {0}, true, graph::kTENSOR_FLOAT32);
     addOp("cross_entropy", {input, label}, {loss});
     return loss;
   }
 
-  graph::TensorAttr* mean(const std::string& paramPrefix,
-                          graph::TensorAttr* input) {
-    auto mean = graph_->createOrGetTensor(paramPrefix + ".output", {0}, true, graph::kTENSOR_FLOAT32).get();
+  graph::TensorAttrPtr mean(const std::string& paramPrefix,
+                          graph::TensorAttrPtr input) {
+    auto mean = graph_->createOrGetTensor(paramPrefix + ".output", {0}, true, graph::kTENSOR_FLOAT32);
     addOp("mean", {input}, {mean});
     return mean;
   }
 
-  graph::TensorAttr* fullyConnected(const std::string& paramPrefix,
-                                    graph::TensorAttr* input, size_t size,
+  graph::TensorAttrPtr fullyConnected(const std::string& paramPrefix,
+                                    graph::TensorAttrPtr input, size_t size,
                                     bool withBias = true,
                                     const ActivationType& act = kSigmoid,
                                     bool allocParam = true) {
@@ -78,32 +78,29 @@ class GraphBuilder {
       }
     }
     auto paramTensor = graph_->createOrGetTensor(paramPrefix+".param.weight.0", {layerWidth, size}, true,
-                                                 graph::kTENSOR_FLOAT32).get();
-    SmallVec<graph::TensorAttr*> inputs = {input, paramTensor, nullptr};
+                                                 graph::kTENSOR_FLOAT32);
+    SmallVec<graph::TensorAttrPtr> inputs = {input, paramTensor, nullptr};
     if (withBias) {
-      auto biasTensor = graph_->createOrGetTensor(paramPrefix+".param.bias",{size, 1}, true,
-                                                   graph::kTENSOR_FLOAT32).get();
+      auto biasTensor = graph_->createOrGetTensor(paramPrefix+".param.bias",{size, 1}, true, graph::kTENSOR_FLOAT32);
       inputs.back() = biasTensor;
     }
 
-    auto fcOpOut = graph_->createOrGetTensor(paramPrefix + "fc.output", {0}, true,
-                                             graph::kTENSOR_FLOAT32).get();
+    auto fcOpOut = graph_->createOrGetTensor(paramPrefix + "fc.output", {0}, true, graph::kTENSOR_FLOAT32);
 
     addOp("fc", inputs, {fcOpOut});
 
-    auto finalOutput = graph_->createOrGetTensor(paramPrefix + ".output", {0}, true,
-                                                 graph::kTENSOR_FLOAT32).get();
+    auto finalOutput = graph_->createOrGetTensor(paramPrefix + ".output", {0}, true, graph::kTENSOR_FLOAT32);
 
     addOp(toString(act), {fcOpOut}, {finalOutput});
     return finalOutput;
   }
 
   // backward
-  void backward(graph::TensorAttr* loss) {
+  void backward(graph::TensorAttrPtr loss) {
     CHECK_EQ(loss->type_, graph::kTENSOR_FLOAT32) << "loss must be float32";
     CHECK_EQ(details::product(loss->dims_), 1)
         << "loss must be scalar, i.e. dim = 1";
-    auto lossGradTensor = graph_->createOrGetTensor(loss->name_ + ".grad", {1, 1}, true, graph::kTENSOR_FLOAT32).get();
+    auto lossGradTensor = graph_->createOrGetTensor(loss->name_ + ".grad", {1, 1}, true, graph::kTENSOR_FLOAT32);
     lossGradTensor->specialResetFunction_ = [](graph::Tensor t) {
       *(float*)(t.buffer_->get()) = 1.0;
     };
@@ -115,19 +112,19 @@ class GraphBuilder {
       auto& opMeta = graph::OpMeta::gAllOpMeta_[op.type_];
       bool needGrad = false;
       auto needGradOrNull =
-          [&needGrad](graph::TensorAttr* t) -> graph::TensorAttr* {
+          [&needGrad](graph::TensorAttrPtr t) -> graph::TensorAttrPtr {
         if (t->needBackward_) {
           needGrad = true;
         }
-            return t;
+        return t;
       };
 
-      SmallVec<graph::TensorAttr*> outputs;
+      SmallVec<graph::TensorAttrPtr> outputs;
       outputs.resize(op.outputs_.size());
       std::transform(op.outputs_.begin(), op.outputs_.end(), outputs.begin(),
                      needGradOrNull);
       bool needGradOutput = needGrad;
-      SmallVec<graph::TensorAttr*> inputs;
+      SmallVec<graph::TensorAttrPtr> inputs;
       inputs.resize(op.inputs_.size());
       std::transform(op.inputs_.begin(), op.inputs_.end(), inputs.begin(),
                      needGradOrNull);
@@ -141,22 +138,22 @@ class GraphBuilder {
       }
       // else .. attach gradient op.
       // 1. get output g.
-      SmallVec<graph::TensorAttr*> outputsGrad;
+      SmallVec<graph::TensorAttrPtr> outputsGrad;
       for (auto& o : outputs) {
         if (!o->needBackward_) {
           outputsGrad.push_back(nullptr);
         } else {
-          outputsGrad.push_back(graph_->createOrGetTensor(o->name_ + ".grad", o->dims_, true, o->type_).get());
+          outputsGrad.push_back(graph_->createOrGetTensor(o->name_ + ".grad", o->dims_, true, o->type_));
         }
       }
 
       // 2. get input g.
-      SmallVec<graph::TensorAttr*> inputsGrad;
+      SmallVec<graph::TensorAttrPtr> inputsGrad;
       for (auto& ipt : inputs) {
         if (!ipt->needBackward_) {
           inputsGrad.push_back(nullptr);
         } else {
-          inputsGrad.push_back(graph_->createOrGetTensor(ipt->name_ + ".grad", ipt->dims_, true, ipt->type_).get());
+          inputsGrad.push_back(graph_->createOrGetTensor(ipt->name_ + ".grad", ipt->dims_, true, ipt->type_));
         }
       }
 
@@ -186,7 +183,7 @@ int main() {
   auto buffer = nnet::memory::TensorBuffer::newBuffer<float>(
       "X", {BATCH_SIZE, 784}, nnet::memory::kDEVICE_CPU);
   nnet::api::GraphBuilder builder(&g);
-  auto xTensor = g.createOrGetTensor("X", {BATCH_SIZE, 784}, false, nnet::graph::kTENSOR_FLOAT32).get();
+  auto xTensor = g.createOrGetTensor("X", {BATCH_SIZE, 784}, false, nnet::graph::kTENSOR_FLOAT32);
 
   auto hidden = builder.fullyConnected("fc1", xTensor, 100, true);
   hidden = builder.fullyConnected("fc2", hidden, 100, true);
@@ -194,7 +191,7 @@ int main() {
                                            nnet::api::kSoftmax);
   auto labelBuffer = nnet::memory::TensorBuffer::newBuffer<int>(
       "Label", {BATCH_SIZE, 1}, nnet::memory::kDEVICE_CPU);
-  auto labelTensor = g.createOrGetTensor("Label", {BATCH_SIZE, 1}, false, nnet::graph::kTENSOR_INT32).get();
+  auto labelTensor = g.createOrGetTensor("Label", {BATCH_SIZE, 1}, false, nnet::graph::kTENSOR_INT32);
 
   auto loss = builder.crossEntropy("xe_loss", prediction, labelTensor);
   auto avgLoss = builder.mean("avg_loss", loss);

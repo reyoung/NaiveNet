@@ -102,7 +102,7 @@ class TensorAttr;
 
 class Tensor final {
  public:
-  TensorAttr* attr_;
+  std::shared_ptr<TensorAttr> attr_;
   std::shared_ptr<memory::TensorBuffer> buffer_;
 };
 
@@ -134,29 +134,30 @@ class TensorAttr final {
   InitializeFN specialResetFunction_;  // when apply reset to tensor, default is reset to zero.
 };
 
-
+using TensorAttrPtr = std::shared_ptr<TensorAttr>;
 
 class Op final {
  public:
   std::string type_;
-  SmallVec<TensorAttr*> inputs_;
-  SmallVec<TensorAttr*> outputs_;
+  SmallVec<TensorAttrPtr> inputs_;
+  SmallVec<TensorAttrPtr> outputs_;
   Map<std::string, Any> attrs_;
 };
 
 class OpMeta final {
  public:
   using ShapeInfererFN =
-      std::function<void(const SmallVec<TensorAttr*>& inputs,
-                         const SmallVec<TensorAttr*>& outputs)>;
+      std::function<void(const SmallVec<TensorAttrPtr>& inputs,
+                         const SmallVec<TensorAttrPtr>& outputs)>;
   using RunOnDeviceFN = std::function<void(const SmallVec<Tensor>& inputs,
                                            SmallVec<Tensor>& outputs,
                                            const Map<std::string, Any> attrs)>;
 
   using GradFN = std::function<SmallVec<Op>(
-      const SmallVec<TensorAttr*>& inputs, const SmallVec<TensorAttr*>& outputs,
-      const SmallVec<TensorAttr*>& outputsGrad,
-      const SmallVec<TensorAttr*>& inputsGrad)>;
+      const SmallVec<TensorAttrPtr>& inputs,
+      const SmallVec<TensorAttrPtr>& outputs,
+      const SmallVec<TensorAttrPtr>& outputsGrad,
+      const SmallVec<TensorAttrPtr>& inputsGrad)>;
 
   std::string type_;
   ShapeInfererFN shapeInferer_;
@@ -166,9 +167,6 @@ class OpMeta final {
 
   static Map<std::string, OpMeta> gAllOpMeta_;
 };
-
-
-using TensorAttrPtr = std::shared_ptr<TensorAttr>;
 
 class Graph final {
  public:

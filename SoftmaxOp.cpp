@@ -18,8 +18,8 @@ static void softmaxOpImpl(const SmallVec<Tensor> &inputs,
   P.colwise() /= P.rowwise().sum();
 }
 
-static void softmaxShapeImpl(const SmallVec<graph::TensorAttr *> &inputs,
-                             const SmallVec<graph::TensorAttr *> &outputs) {
+static void softmaxShapeImpl(const SmallVec<graph::TensorAttrPtr> &inputs,
+                             const SmallVec<graph::TensorAttrPtr> &outputs) {
   outputs[0]->dims_ = inputs[0]->dims_;
 }
 
@@ -37,8 +37,8 @@ static void softmaxGradImpl(const SmallVec<Tensor> &inputs,
   IG.rowwise() -= mat.colwise().sum();
   IG = IG.array() * P.array(); // elemwise mul
 }
-static void softmaxGradShapeImpl(const SmallVec<graph::TensorAttr *> &inputs,
-                                 const SmallVec<graph::TensorAttr *> &outputs) {
+static void softmaxGradShapeImpl(const SmallVec<graph::TensorAttrPtr> &inputs,
+                                 const SmallVec<graph::TensorAttrPtr> &outputs) {
   auto P = inputs[0];
   auto OG = inputs[1];
   auto IG = outputs[0];
@@ -47,10 +47,10 @@ static void softmaxGradShapeImpl(const SmallVec<graph::TensorAttr *> &inputs,
 }
 
 static SmallVec<graph::Op> GetSoftmaxGradOp(
-    const SmallVec<graph::TensorAttr *> &I,
-    const SmallVec<graph::TensorAttr *> &O,
-    const SmallVec<graph::TensorAttr *> &OG,
-    const SmallVec<graph::TensorAttr *> &IG) {
+    const SmallVec<graph::TensorAttrPtr> &I,
+    const SmallVec<graph::TensorAttrPtr> &O,
+    const SmallVec<graph::TensorAttrPtr> &OG,
+    const SmallVec<graph::TensorAttrPtr> &IG) {
   graph::Op op;
   op.type_ = "softmax_grad";
   op.inputs_ = {O[0], OG[0]};

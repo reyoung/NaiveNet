@@ -20,23 +20,23 @@ static void MeanGradImpl(const SmallVec<Tensor> &inputs,
   ig = g / ig.size();
 }
 
-static void MeanGradShapeImpl(const SmallVec<graph::TensorAttr *> &inputs,
-                              const SmallVec<graph::TensorAttr *> &outputs) {
+static void MeanGradShapeImpl(const SmallVec<graph::TensorAttrPtr> &inputs,
+                              const SmallVec<graph::TensorAttrPtr> &outputs) {
   CHECK_EQ(inputs.size(), 2);
   outputs[0]->dims_ = inputs[0]->dims_;
   CHECK_EQ(details::product(inputs[1]->dims_), 1);
 }
 
-static void MeanShapeImpl(const SmallVec<graph::TensorAttr *> &inputs,
-                          const SmallVec<graph::TensorAttr *> &outputs) {
+static void MeanShapeImpl(const SmallVec<graph::TensorAttrPtr> &inputs,
+                          const SmallVec<graph::TensorAttrPtr> &outputs) {
   outputs[0]->dims_ = {1, 1};
 }
 
 static SmallVec<graph::Op> GetMeanGradOp(
-    const SmallVec<graph::TensorAttr *> &I,
-    const SmallVec<graph::TensorAttr *> &O,
-    const SmallVec<graph::TensorAttr *> &OG,
-    const SmallVec<graph::TensorAttr *> &IG) {
+    const SmallVec<graph::TensorAttrPtr> &I,
+    const SmallVec<graph::TensorAttrPtr> &O,
+    const SmallVec<graph::TensorAttrPtr> &OG,
+    const SmallVec<graph::TensorAttrPtr> &IG) {
   graph::Op op;
   op.type_ = "mean_grad";
   op.inputs_ = {I[0], OG[0]};

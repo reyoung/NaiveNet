@@ -17,8 +17,8 @@ static void FCOpImpl(const SmallVec<Tensor> &inputs,
     O.rowwise() += B.transpose();
   }
 }
-static void FCOpShape(const SmallVec<graph::TensorAttr *> &inputs,
-                      const SmallVec<graph::TensorAttr *> &outputs) {
+static void FCOpShape(const SmallVec<graph::TensorAttrPtr> &inputs,
+                      const SmallVec<graph::TensorAttrPtr> &outputs) {
   auto X = inputs[0];
   auto W = inputs[1];
   outputs[0]->dims_ = {X->dims_[0], W->dims_[1]};
@@ -46,8 +46,8 @@ static void FCGradOpImpl(const SmallVec<Tensor> &inputs,
   }
 }
 
-static void FCGradShapeImpl(const SmallVec<graph::TensorAttr *> &inputs,
-                            const SmallVec<graph::TensorAttr *> &outputs) {
+static void FCGradShapeImpl(const SmallVec<graph::TensorAttrPtr> &inputs,
+                            const SmallVec<graph::TensorAttrPtr> &outputs) {
   auto X = inputs[0];
   auto W = inputs[1];
   outputs[0]->dims_ = W->dims_;
@@ -60,10 +60,10 @@ static void FCGradShapeImpl(const SmallVec<graph::TensorAttr *> &inputs,
 }
 
 static SmallVec<graph::Op> GetFCGradImpl(
-    const SmallVec<graph::TensorAttr *> &I,
-    const SmallVec<graph::TensorAttr *> &O,
-    const SmallVec<graph::TensorAttr *> &OG,
-    const SmallVec<graph::TensorAttr *> &IG) {
+    const SmallVec<graph::TensorAttrPtr> &I,
+    const SmallVec<graph::TensorAttrPtr> &O,
+    const SmallVec<graph::TensorAttrPtr> &OG,
+    const SmallVec<graph::TensorAttrPtr> &IG) {
   graph::Op op;
   op.type_ = "fc_grad";
   op.inputs_ = {I[0], I[1], OG[0]};

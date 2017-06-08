@@ -89,7 +89,7 @@ class Engine {
     if (boost::algorithm::contains(name, ".param") && !boost::algorithm::contains(name, ".grad")) {
       auto t = new Tensor();
       t->buffer_ = memory::TensorBuffer::gTensorBuffers[name];
-      t->attr_ = graph_.tensors_.at(name).get();
+      t->attr_ = graph_.tensors_.at(name);
       return std::unique_ptr<Tensor>(t);
     } else {
       return nullptr;
@@ -99,7 +99,7 @@ class Engine {
   std::unique_ptr<Tensor> getGradInGraph(const std::string& name) {
     if (boost::algorithm::contains(name, ".grad")) {
       auto t = new Tensor();
-      t->attr_ = graph_.tensors_.at(name).get();
+      t->attr_ = graph_.tensors_.at(name);
       t->buffer_ = memory::TensorBuffer::tryAllocBuffer<float>(t->attr_->name_, t->attr_->dims_);
       return std::unique_ptr<Tensor>(t);
     } else {
