@@ -8,8 +8,8 @@ The lines of code should be less than 2000 or 3000, and should complete the foll
 2. [Done] User can configure a computation graph.
 3. [Done] forward a fast forward network.
 4. [Done] backward a fast forward network.
-5. [TODO] Abstract Graph Compiler concept.
-5. [TODO] Optimization.
+5. [Done] Abstract Graph Compiler concept.
+5. [Doing] Optimization.
 6. [TODO] Recurrent Neural Network.
 7. [TODO] Dynamic Network.
 8. [TODO] MultiThread Engine.
