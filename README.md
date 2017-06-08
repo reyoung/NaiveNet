@@ -14,3 +14,16 @@ The lines of code should be less than 2000 or 3000, and should complete the foll
 6. [TODO] Recurrent Neural Network.
 7. [TODO] Dynamic Network.
 8. [TODO] MultiThread Engine.
+
+## Build & RUN
+
+```cpp
+git clone --recursive https://github.com/reyoung/NaiveNet.git
+cd NaiveNet
+mkdir build
+cd build
+cmake ..
+make
+cd ..
+./build/NaiveNet
+```

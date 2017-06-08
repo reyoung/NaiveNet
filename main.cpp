@@ -149,7 +149,7 @@ static void TrainMnistOnePass(bool printGradMean = false) {
     lossMemTensor.buffer_ = nnet::memory::TensorBuffer::gTensorBuffers.at(avgLoss->name_);
     lossMemTensor.attr_ = avgLoss;
     auto m = nnet::engine::castToEigenArray1D(lossMemTensor);
-    LOG(INFO) << "Loss = " << *m.data();
+    LOG(INFO) << "MNIST batch-id="<< i <<" XE-Loss = " << *m.data();
   }
 }
 
