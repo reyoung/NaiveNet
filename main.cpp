@@ -119,7 +119,7 @@ int main() {
   auto avgLoss = builder.mean("avg_loss", loss);
 
   builder.backward(avgLoss);
-  nnet::graph::compileGraph(&g, {"optimizer"});
+  nnet::graph::compileGraph(&g, {"optimizer"}, {{"optimizer", std::string("sgd")}, {"learning_rate", 0.005f}});
 
   nnet::engine::NaiveEngine engine(g);
   engine.randomize();

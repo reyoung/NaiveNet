@@ -14,13 +14,6 @@ using memory::kDEVICE_GPU;
 using memory::kDEVICE_CPU;
 using memory::kNUM_DEVICES;
 
-namespace error {
-class DefaultValueHasBeenSet : public Error {
- public:
-  DefaultValueHasBeenSet() : Error("Default value has been set") {}
-};
-}
-
 class BaseConstraints {
  public:
   virtual void check(const std::string& name, Map<std::string, Any>* attrs) = 0;
@@ -37,16 +30,9 @@ class Constraints final : public BaseConstraints {
   }
 
   Constraints<T>& defaultValue(const T& defaultVal) {
-    return add([=](T* attr, bool alreadySet) {
-      if (alreadySet) throw error::DefaultValueHasBeenSet();
+    return add([=](T* attr, bool) {
       *attr = defaultVal;
     });
-  }
-
-  void check(T* attr, bool alreadySet) const throw(Error) {
-    for (auto& f : constraints_) {
-      f(attr, alreadySet);
-    }
   }
 
   void check(const std::string& name, Map<std::string, Any>* attrs) override {
@@ -59,7 +45,9 @@ class Constraints final : public BaseConstraints {
 
     T* attr = any_cast<T>(ptr);
     CHECK_NE(attr, nullptr);
-    this->check(attr, alreadySet);
+    for (auto& f : constraints_) {
+      f(attr, alreadySet);
+    }
   }
 
  private:
