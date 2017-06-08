@@ -101,8 +101,7 @@ class GraphBuilder {
 }
 }
 
-int main() {
-  nnet::util::InitFunction::apply();
+static void TrainMnistOnePass(bool printGradMean = false) {
   nnet::graph::Graph g;
   constexpr size_t BATCH_SIZE = 1000;
   auto buffer = nnet::memory::TensorBuffer::newBuffer<float>("X", {BATCH_SIZE, 784}, nnet::memory::kDEVICE_CPU);
@@ -143,13 +142,23 @@ int main() {
     nnet::engine::castToEigenArray2DMutable(inputTensor) /= 255.0;
     engine.resetOrCreateGradient();
     engine.run(false);
-    engine.printMean();  // print mean grad of params
+    if (printGradMean) {
+      engine.printMean();  // print mean grad of params
+    }
     nnet::engine::Tensor lossMemTensor;
     lossMemTensor.buffer_ = nnet::memory::TensorBuffer::gTensorBuffers.at(avgLoss->name_);
     lossMemTensor.attr_ = avgLoss;
     auto m = nnet::engine::castToEigenArray1D(lossMemTensor);
     LOG(INFO) << "Loss = " << *m.data();
   }
+}
 
+int main() {
+  nnet::util::InitFunction::apply();
+  bool runMNIST = true;
+  if (runMNIST) {
+    TrainMnistOnePass();
+    nnet::memory::TensorBuffer::gTensorBuffers.clear(); // drop all buffer, make context clean.
+  }
   return 0;
 }

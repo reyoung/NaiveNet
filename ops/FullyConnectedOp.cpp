@@ -2,8 +2,8 @@
 #include "misc/InitFunction.h"
 
 namespace nnet {
-
 namespace engine {
+
 static void FCOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs, const Map<std::string, Any> &attrs) {
   auto X = castToEigenMat(inputs[0]);
   auto W = castToEigenMat(inputs[1]);
