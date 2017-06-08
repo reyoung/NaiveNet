@@ -6,10 +6,8 @@ namespace nnet {
 namespace graph {
 static void optimizer(Graph& g, const Map<std::string, Any>& attrs) {
   for (auto tensorPtr : g.tensors_) {
-    if (boost::algorithm::contains(tensorPtr.first, ".grad") &&
-        boost::algorithm::contains(tensorPtr.first, ".param")) {
-      auto paramKey =
-          boost::algorithm::replace_last_copy(tensorPtr.first, ".grad", "");
+    if (boost::algorithm::contains(tensorPtr.first, ".grad") && boost::algorithm::contains(tensorPtr.first, ".param")) {
+      auto paramKey = boost::algorithm::replace_last_copy(tensorPtr.first, ".grad", "");
       auto it = g.tensors_.find(paramKey);
       CHECK_NE(it, g.tensors_.end());
       g.ops_.emplace_back();
@@ -25,8 +23,6 @@ static void optimizer(Graph& g, const Map<std::string, Any>& attrs) {
     }
   }
 }
-static util::InitFunction init([] {
-  compilers().insert({"optimizer", optimizer});
-});
+static util::InitFunction init([] { compilers().insert({"optimizer", optimizer}); });
 }
 }

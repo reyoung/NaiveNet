@@ -17,13 +17,11 @@ enum Device : int { kDEVICE_CPU = 0, kDEVICE_GPU = 1, kNUM_DEVICES };
 
 class TensorBuffer {
  public:
-  TensorBuffer(size_t size, size_t capacity)
-      : size_(size), capacity_(capacity) {}
+  TensorBuffer(size_t size, size_t capacity) : size_(size), capacity_(capacity) {}
 
   virtual ~TensorBuffer() {}
   virtual Device device() const = 0;
-  virtual void copyFrom(const TensorBuffer& o, size_t elemSize = 0,
-                        size_t sliceBegin = 0, size_t sliceEnd = 0) = 0;
+  virtual void copyFrom(const TensorBuffer& o, size_t elemSize = 0, size_t sliceBegin = 0, size_t sliceEnd = 0) = 0;
   virtual void resize(size_t newSize) = 0;
 
   void* get() const { return buf_; }
@@ -31,12 +29,11 @@ class TensorBuffer {
   static Map<std::string, std::shared_ptr<TensorBuffer>> gTensorBuffers;
 
   template <typename T, typename Container = std::initializer_list<size_t>>
-  static std::shared_ptr<TensorBuffer> newBuffer(const std::string& name,
-                                                 Container dims, Device dev);
+  static std::shared_ptr<TensorBuffer> newBuffer(const std::string& name, Container dims, Device dev);
 
   template <typename T, typename Container = std::initializer_list<size_t>>
-  static std::shared_ptr<TensorBuffer> createOrResizeBuffer(
-      const std::string& name, Container dims, Device dev = kDEVICE_CPU) {
+  static std::shared_ptr<TensorBuffer> createOrResizeBuffer(const std::string& name, Container dims,
+                                                            Device dev = kDEVICE_CPU) {
     auto it = memory::TensorBuffer::gTensorBuffers.find(name);
     if (it == memory::TensorBuffer::gTensorBuffers.end()) {
       return memory::TensorBuffer::newBuffer<T>(name, dims, dev);
@@ -60,9 +57,7 @@ class CpuTensorBuffer : public TensorBuffer {
  public:
   CpuTensorBuffer() = default;
 
-  CpuTensorBuffer(size_t size) : TensorBuffer(size, size) {
-    CHECK_EQ(posix_memalign(&buf_, 32UL, size), 0);
-  }
+  CpuTensorBuffer(size_t size) : TensorBuffer(size, size) { CHECK_EQ(posix_memalign(&buf_, 32UL, size), 0); }
 
   ~CpuTensorBuffer() { free(buf_); }
 
@@ -78,16 +73,13 @@ class CpuTensorBuffer : public TensorBuffer {
     size_ = newSize;
   }
 
-  void copyFrom(const TensorBuffer& o, size_t elemSize = 0,
-                size_t sliceBegin = 0, size_t sliceEnd = 0) override {
+  void copyFrom(const TensorBuffer& o, size_t elemSize = 0, size_t sliceBegin = 0, size_t sliceEnd = 0) override {
     LOG(FATAL) << "Not Implemented";
   }
 };
 
 template <typename T, typename Container>
-std::shared_ptr<TensorBuffer> TensorBuffer::newBuffer(const std::string& name,
-                                                      Container dims,
-                                                      Device dev) {
+std::shared_ptr<TensorBuffer> TensorBuffer::newBuffer(const std::string& name, Container dims, Device dev) {
   CHECK_EQ(gTensorBuffers.find(name), gTensorBuffers.end());
   size_t prod = sizeof(T);
   prod *= details::product(dims);

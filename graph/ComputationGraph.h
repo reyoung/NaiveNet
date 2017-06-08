@@ -80,20 +80,14 @@ class AttributeMeta final {
   }
 
   template <typename T>
-  static std::shared_ptr<AttributeMeta> create(const std::string& name,
-                                               const std::string& description) {
-    return std::make_shared<AttributeMeta>(
-        name, description, typeid(T),
-        std::unique_ptr<BaseConstraints>(new Constraints<T>()));
+  static std::shared_ptr<AttributeMeta> create(const std::string& name, const std::string& description) {
+    return std::make_shared<AttributeMeta>(name, description, typeid(T),
+                                           std::unique_ptr<BaseConstraints>(new Constraints<T>()));
   }
 
-  inline AttributeMeta(const std::string& name, const std::string& desc,
-                       const std::type_info& type,
+  inline AttributeMeta(const std::string& name, const std::string& desc, const std::type_info& type,
                        std::unique_ptr<BaseConstraints>&& cons)
-      : name_(name),
-        description_(desc),
-        type_(type),
-        constraints_(std::move(cons)) {}
+      : name_(name), description_(desc), type_(type), constraints_(std::move(cons)) {}
 };
 
 enum TensorType : size_t { kTENSOR_FLOAT32 = 0, kTENSOR_INT32 = 1 };
@@ -109,21 +103,14 @@ class TensorAttr final {
  public:
   using InitializeFN = std::function<void(Tensor)>;
   TensorAttr() = default;
-  TensorAttr(const std::string& name, const SmallVec<size_t>& dims,
-             TensorType type, bool needBackward)
+  TensorAttr(const std::string& name, const SmallVec<size_t>& dims, TensorType type, bool needBackward)
       : name_(name), needBackward_(needBackward), dims_(dims), type_(type) {}
 
-  bool sameNameAndType(const TensorAttr& attr) const {
-    return attr.name_ == name_ && attr.type_ == type_;
-  }
+  bool sameNameAndType(const TensorAttr& attr) const { return attr.name_ == name_ && attr.type_ == type_; }
 
-  bool operator==(const TensorAttr& attr) const {
-    return sameNameAndType(attr) && attr.dims_ == dims_;
-  }
+  bool operator==(const TensorAttr& attr) const { return sameNameAndType(attr) && attr.dims_ == dims_; }
 
-  bool operator!=(const TensorAttr& attr) const {
-    return !this->operator==(attr);
-  }
+  bool operator!=(const TensorAttr& attr) const { return !this->operator==(attr); }
 
   std::string name_;
   bool needBackward_{true};
@@ -146,17 +133,13 @@ class Op final {
 class OpMeta final {
  public:
   using ShapeInfererFN =
-      std::function<void(const SmallVec<TensorAttrPtr>& inputs,
-                         const SmallVec<TensorAttrPtr>& outputs)>;
-  using RunOnDeviceFN = std::function<void(const SmallVec<Tensor>& inputs,
-                                           SmallVec<Tensor>& outputs,
-                                           const Map<std::string, Any> attrs)>;
+      std::function<void(const SmallVec<TensorAttrPtr>& inputs, const SmallVec<TensorAttrPtr>& outputs)>;
+  using RunOnDeviceFN =
+      std::function<void(const SmallVec<Tensor>& inputs, SmallVec<Tensor>& outputs, const Map<std::string, Any> attrs)>;
 
-  using GradFN =
-      std::function<SmallVec<Op>(const SmallVec<TensorAttrPtr>& inputs,
-                                 const SmallVec<TensorAttrPtr>& outputs,
-                                 const SmallVec<TensorAttrPtr>& outputsGrad,
-                                 const SmallVec<TensorAttrPtr>& inputsGrad)>;
+  using GradFN = std::function<SmallVec<Op>(
+      const SmallVec<TensorAttrPtr>& inputs, const SmallVec<TensorAttrPtr>& outputs,
+      const SmallVec<TensorAttrPtr>& outputsGrad, const SmallVec<TensorAttrPtr>& inputsGrad)>;
 
   std::string type_;
   ShapeInfererFN shapeInferer_;
@@ -174,9 +157,8 @@ class Graph final {
   Map<std::string, memory::TensorBufferPtr> buffers_;
 
   template <bool failWhenMismatchDims = false>
-  TensorAttrPtr createOrGetTensor(const std::string& name,
-                                  const SmallVec<size_t>& dim,
-                                  bool need_backward, TensorType type) {
+  TensorAttrPtr createOrGetTensor(const std::string& name, const SmallVec<size_t>& dim, bool need_backward,
+                                  TensorType type) {
     auto attr = std::make_shared<TensorAttr>(name, dim, type, need_backward);
     auto it = tensors_.find(name);
     if (it == tensors_.end()) {
@@ -194,12 +176,10 @@ class Graph final {
   }
 };
 
-using CompileGraphFN =
-    std::function<void(Graph&, const Map<std::string, Any>&)>;
+using CompileGraphFN = std::function<void(Graph&, const Map<std::string, Any>&)>;
 extern Map<std::string, CompileGraphFN>& compilers();
-inline void compileGraph(
-    Graph* g, const SmallVec<std::string>& stages,
-    const Map<std::string, Any>& attrs = Map<std::string, Any>()) {
+inline void compileGraph(Graph* g, const SmallVec<std::string>& stages,
+                         const Map<std::string, Any>& attrs = Map<std::string, Any>()) {
   for (auto& key : stages) {
     compilers().at(key)(*g, attrs);
   }

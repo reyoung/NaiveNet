@@ -8,8 +8,7 @@
 namespace nnet {
 namespace engine {
 
-static void softmaxOpImpl(const SmallVec<Tensor> &inputs,
-                          SmallVec<Tensor> &outputs,
+static void softmaxOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs,
                           const Map<std::string, Any> &attrs) {
   auto X = castToEigenArray2D(inputs[0]);
   auto P = castToEigenArray2DMutable(outputs[0]);
@@ -23,8 +22,7 @@ static void softmaxShapeImpl(const SmallVec<graph::TensorAttrPtr> &inputs,
   outputs[0]->dims_ = inputs[0]->dims_;
 }
 
-static void softmaxGradImpl(const SmallVec<Tensor> &inputs,
-                            SmallVec<Tensor> &outputs,
+static void softmaxGradImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs,
                             const Map<std::string, Any> &attrs) {
   auto P = castToEigenMat(inputs[0]);
   auto OG = castToEigenMat(inputs[1]);
@@ -37,9 +35,8 @@ static void softmaxGradImpl(const SmallVec<Tensor> &inputs,
   IG.rowwise() -= mat.colwise().sum();
   IG = IG.array() * P.array();  // elemwise mul
 }
-static void softmaxGradShapeImpl(
-    const SmallVec<graph::TensorAttrPtr> &inputs,
-    const SmallVec<graph::TensorAttrPtr> &outputs) {
+static void softmaxGradShapeImpl(const SmallVec<graph::TensorAttrPtr> &inputs,
+                                 const SmallVec<graph::TensorAttrPtr> &outputs) {
   auto P = inputs[0];
   auto OG = inputs[1];
   auto IG = outputs[0];
@@ -47,11 +44,10 @@ static void softmaxGradShapeImpl(
   CHECK_EQ(OG->dims_, P->dims_);
 }
 
-static SmallVec<graph::Op> GetSoftmaxGradOp(
-    const SmallVec<graph::TensorAttrPtr> &I,
-    const SmallVec<graph::TensorAttrPtr> &O,
-    const SmallVec<graph::TensorAttrPtr> &OG,
-    const SmallVec<graph::TensorAttrPtr> &IG) {
+static SmallVec<graph::Op> GetSoftmaxGradOp(const SmallVec<graph::TensorAttrPtr> &I,
+                                            const SmallVec<graph::TensorAttrPtr> &O,
+                                            const SmallVec<graph::TensorAttrPtr> &OG,
+                                            const SmallVec<graph::TensorAttrPtr> &IG) {
   graph::Op op;
   op.type_ = "softmax_grad";
   op.inputs_ = {O[0], OG[0]};

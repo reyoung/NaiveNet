@@ -5,8 +5,7 @@
 namespace nnet {
 namespace engine {
 
-static void XEOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs,
-                     const Map<std::string, Any> &attrs) {
+static void XEOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs, const Map<std::string, Any> &attrs) {
   auto p = (float *)(inputs[0].buffer_->get());
   auto l = (int *)(inputs[1].buffer_->get());
   auto loss = (float *)(outputs[0].buffer_->get());
@@ -21,15 +20,13 @@ static void XEOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs,
   }
 }
 
-static void XEShapeImpl(const SmallVec<graph::TensorAttrPtr> &inputs,
-                        const SmallVec<graph::TensorAttrPtr> &outputs) {
+static void XEShapeImpl(const SmallVec<graph::TensorAttrPtr> &inputs, const SmallVec<graph::TensorAttrPtr> &outputs) {
   CHECK_EQ(inputs[0]->dims_[0], inputs[1]->dims_[0]);
   CHECK_EQ(inputs[1]->type_, graph::kTENSOR_INT32);
   outputs[0]->dims_ = {inputs[0]->dims_[0], 1};
 }
 
-static void XEOpGradImpl(const SmallVec<Tensor> &inputs,
-                         SmallVec<Tensor> &outputs,
+static void XEOpGradImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs,
                          const Map<std::string, Any> &attrs) {
   size_t numSamples = inputs[0].attr_->dims_[0];
   size_t dim = inputs[0].attr_->dims_[1];
@@ -57,11 +54,9 @@ static void XEGradShapeImpl(const SmallVec<graph::TensorAttrPtr> &inputs,
   GI->dims_ = P->dims_;
 }
 
-static SmallVec<graph::Op> GetXeGradOp(
-    const SmallVec<graph::TensorAttrPtr> &I,
-    const SmallVec<graph::TensorAttrPtr> &O,
-    const SmallVec<graph::TensorAttrPtr> &OG,
-    const SmallVec<graph::TensorAttrPtr> &IG) {
+static SmallVec<graph::Op> GetXeGradOp(const SmallVec<graph::TensorAttrPtr> &I, const SmallVec<graph::TensorAttrPtr> &O,
+                                       const SmallVec<graph::TensorAttrPtr> &OG,
+                                       const SmallVec<graph::TensorAttrPtr> &IG) {
   graph::Op op;
   op.type_ = "cross_entropy_grad";
   op.inputs_ = {I[0], I[1], OG[0]};

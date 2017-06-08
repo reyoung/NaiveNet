@@ -9,8 +9,6 @@ static void shapeInferer(Graph& g, const Map<std::string, Any>& ignored) {
     opMeta.shapeInferer_(op.inputs_, op.outputs_);
   }
 }
-static util::InitFunction init([] {
-  compilers().insert({"inferenceShape", shapeInferer});
-});
+static util::InitFunction init([] { compilers().insert({"inferenceShape", shapeInferer}); });
 }
 }

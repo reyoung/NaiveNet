@@ -21,9 +21,7 @@ static void backward(Graph& g, const Map<std::string, Any>& attrs) {
   auto& lossTensorAttr = g.tensors_.at(lossName);
   CHECK_EQ(details::product(lossTensorAttr->dims_), 1UL);
   CHECK_EQ(lossTensorAttr->type_, kTENSOR_FLOAT32);
-  lossTensorAttr->specialResetFunction_ = [](Tensor t) {
-    *(float*)(t.buffer_->get()) = 1.0;
-  };
+  lossTensorAttr->specialResetFunction_ = [](Tensor t) { *(float*)(t.buffer_->get()) = 1.0; };
   size_t backwardPoint;
   {
     auto it = attrs.find("backward_point");
@@ -60,8 +58,6 @@ static void backward(Graph& g, const Map<std::string, Any>& attrs) {
   }
 }
 
-static util::InitFunction init([] {
-  compilers().insert({"backward", backward});
-});
+static util::InitFunction init([] { compilers().insert({"backward", backward}); });
 }
 }

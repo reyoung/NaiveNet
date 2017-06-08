@@ -6,16 +6,14 @@
 #include "misc/InitFunction.h"
 namespace nnet {
 namespace engine {
-static void sigmoidOpImpl(const SmallVec<Tensor> &inputs,
-                          SmallVec<Tensor> &outputs,
+static void sigmoidOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs,
                           const Map<std::string, Any> &attrs) {
   auto a = castToEigenArray1D(inputs[0]);
   auto o = castToEigenArray1DMutable(outputs[0]);
   o = Eigen::tanh(a);
 }
 
-static void sigmoidOpGrad(const SmallVec<Tensor> &inputs,
-                          SmallVec<Tensor> &outputs,
+static void sigmoidOpGrad(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs,
                           const Map<std::string, Any> &attrs) {
   auto O = castToEigenArray1D(inputs[0]);
   auto OG = castToEigenArray1D(inputs[1]);
@@ -34,11 +32,10 @@ static void sigmoidShapeImpl(const SmallVec<graph::TensorAttrPtr> &inputs,
   outputs[0]->dims_ = inputs[0]->dims_;
 }
 
-static SmallVec<graph::Op> GetSigmoidGradImpl(
-    const SmallVec<graph::TensorAttrPtr> &I,
-    const SmallVec<graph::TensorAttrPtr> &O,
-    const SmallVec<graph::TensorAttrPtr> &OG,
-    const SmallVec<graph::TensorAttrPtr> &IG) {
+static SmallVec<graph::Op> GetSigmoidGradImpl(const SmallVec<graph::TensorAttrPtr> &I,
+                                              const SmallVec<graph::TensorAttrPtr> &O,
+                                              const SmallVec<graph::TensorAttrPtr> &OG,
+                                              const SmallVec<graph::TensorAttrPtr> &IG) {
   graph::Op op;
   op.type_ = "sigmoid_grad";
   op.inputs_ = {O[0], OG[0]};

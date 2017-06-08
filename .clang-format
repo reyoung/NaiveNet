@@ -1,0 +1,4 @@
+BasedOnStyle: google
+
+# because this repo should be less than 2000 lines, each line could be a little bit longer
+ColumnLimit: 120

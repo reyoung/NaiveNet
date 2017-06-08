@@ -4,15 +4,12 @@
 namespace nnet {
 namespace engine {
 
-static void MeanOpImpl(const SmallVec<Tensor> &inputs,
-                       SmallVec<Tensor> &outputs,
-                       const Map<std::string, Any> &attrs) {
+static void MeanOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs, const Map<std::string, Any> &attrs) {
   auto i = castToEigenArray1D(inputs[0]);
   *(float *)(outputs[0].buffer_->get()) = i.mean();
 }
 
-static void MeanGradImpl(const SmallVec<Tensor> &inputs,
-                         SmallVec<Tensor> &outputs,
+static void MeanGradImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs,
                          const Map<std::string, Any> &attrs) {
   auto og = castToEigenArray1D(inputs[1]);          // output grad;
   auto ig = castToEigenArray1DMutable(outputs[0]);  // input grad;
@@ -27,16 +24,14 @@ static void MeanGradShapeImpl(const SmallVec<graph::TensorAttrPtr> &inputs,
   CHECK_EQ(details::product(inputs[1]->dims_), 1);
 }
 
-static void MeanShapeImpl(const SmallVec<graph::TensorAttrPtr> &inputs,
-                          const SmallVec<graph::TensorAttrPtr> &outputs) {
+static void MeanShapeImpl(const SmallVec<graph::TensorAttrPtr> &inputs, const SmallVec<graph::TensorAttrPtr> &outputs) {
   outputs[0]->dims_ = {1, 1};
 }
 
-static SmallVec<graph::Op> GetMeanGradOp(
-    const SmallVec<graph::TensorAttrPtr> &I,
-    const SmallVec<graph::TensorAttrPtr> &O,
-    const SmallVec<graph::TensorAttrPtr> &OG,
-    const SmallVec<graph::TensorAttrPtr> &IG) {
+static SmallVec<graph::Op> GetMeanGradOp(const SmallVec<graph::TensorAttrPtr> &I,
+                                         const SmallVec<graph::TensorAttrPtr> &O,
+                                         const SmallVec<graph::TensorAttrPtr> &OG,
+                                         const SmallVec<graph::TensorAttrPtr> &IG) {
   graph::Op op;
   op.type_ = "mean_grad";
   op.inputs_ = {I[0], OG[0]};

@@ -4,8 +4,7 @@
 namespace nnet {
 
 namespace engine {
-static void FCOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs,
-                     const Map<std::string, Any> &attrs) {
+static void FCOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs, const Map<std::string, Any> &attrs) {
   auto X = castToEigenMat(inputs[0]);
   auto W = castToEigenMat(inputs[1]);
 
@@ -16,15 +15,13 @@ static void FCOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs,
     O.rowwise() += B.transpose();
   }
 }
-static void FCOpShape(const SmallVec<graph::TensorAttrPtr> &inputs,
-                      const SmallVec<graph::TensorAttrPtr> &outputs) {
+static void FCOpShape(const SmallVec<graph::TensorAttrPtr> &inputs, const SmallVec<graph::TensorAttrPtr> &outputs) {
   auto X = inputs[0];
   auto W = inputs[1];
   outputs[0]->dims_ = {X->dims_[0], W->dims_[1]};
 }
 
-static void FCGradOpImpl(const SmallVec<Tensor> &inputs,
-                         SmallVec<Tensor> &outputs,
+static void FCGradOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs,
                          const Map<std::string, Any> &attrs) {
   auto X = castToEigenMat(inputs[0]);
   auto W = castToEigenMat(inputs[1]);
@@ -57,11 +54,10 @@ static void FCGradShapeImpl(const SmallVec<graph::TensorAttrPtr> &inputs,
   }
 }
 
-static SmallVec<graph::Op> GetFCGradImpl(
-    const SmallVec<graph::TensorAttrPtr> &I,
-    const SmallVec<graph::TensorAttrPtr> &O,
-    const SmallVec<graph::TensorAttrPtr> &OG,
-    const SmallVec<graph::TensorAttrPtr> &IG) {
+static SmallVec<graph::Op> GetFCGradImpl(const SmallVec<graph::TensorAttrPtr> &I,
+                                         const SmallVec<graph::TensorAttrPtr> &O,
+                                         const SmallVec<graph::TensorAttrPtr> &OG,
+                                         const SmallVec<graph::TensorAttrPtr> &IG) {
   graph::Op op;
   op.type_ = "fc_grad";
   op.inputs_ = {I[0], I[1], OG[0]};

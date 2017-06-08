@@ -10,8 +10,7 @@ std::default_random_engine& getGenerator() {
   return *gGenerator;
 }
 
-#define castFN(__fn__) \
-  (std::bind(std::mem_fn(__fn__), this, std::placeholders::_1));
+#define castFN(__fn__) (std::bind(std::mem_fn(__fn__), this, std::placeholders::_1));
 
 void NaiveEngine::randomize(Engine::NameMappingFN fn) const {
   if (!fn) {
@@ -45,8 +44,7 @@ void NaiveEngine::resetOrCreateGradient(Engine::NameMappingFN fn) const {
   });
 }
 
-static SmallVec<Tensor> toTensor(
-    const SmallVec<graph::TensorAttrPtr>& tensors) {
+static SmallVec<Tensor> toTensor(const SmallVec<graph::TensorAttrPtr>& tensors) {
   SmallVec<Tensor> retv;
   for (auto iptAttr : tensors) {
     retv.emplace_back();
@@ -55,11 +53,9 @@ static SmallVec<Tensor> toTensor(
     if (ipt.attr_ == nullptr) {
       ipt.buffer_ = nullptr;
     } else if (ipt.attr_->type_ == graph::kTENSOR_FLOAT32) {
-      ipt.buffer_ = memory::TensorBuffer::createOrResizeBuffer<float>(
-          iptAttr->name_, iptAttr->dims_);
+      ipt.buffer_ = memory::TensorBuffer::createOrResizeBuffer<float>(iptAttr->name_, iptAttr->dims_);
     } else if (ipt.attr_->type_ == graph::kTENSOR_INT32) {
-      ipt.buffer_ = memory::TensorBuffer::createOrResizeBuffer<int>(
-          iptAttr->name_, iptAttr->dims_);
+      ipt.buffer_ = memory::TensorBuffer::createOrResizeBuffer<int>(iptAttr->name_, iptAttr->dims_);
     }
   }
   return retv;
@@ -111,8 +107,7 @@ void NaiveEngine::printMean(NameMappingFN fn) const {
   });
 }
 
-void NaiveEngine::accessTensor(NameMappingFN fn,
-                               std::function<void(Tensor&)> tensorFN) const {
+void NaiveEngine::accessTensor(NameMappingFN fn, std::function<void(Tensor&)> tensorFN) const {
   for (auto& t : graph_.tensors_) {
     auto tensor = fn(t.first);
     if (tensor != nullptr) {
