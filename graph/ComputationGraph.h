@@ -3,8 +3,8 @@
 #include <functional>
 #include <typeinfo>
 #include "ComputationGraph.h"
-#include "misc/Error.h"
 #include "memory/TensorBuffer.h"
+#include "misc/Error.h"
 #include "misc/Typedef.h"
 
 namespace nnet {
@@ -109,20 +109,19 @@ class TensorAttr final {
  public:
   using InitializeFN = std::function<void(Tensor)>;
   TensorAttr() = default;
-  TensorAttr(const std::string& name,
-             const SmallVec<size_t>& dims,
-             TensorType type,
-             bool needBackward): name_(name), needBackward_(needBackward), dims_(dims), type_(type) {}
+  TensorAttr(const std::string& name, const SmallVec<size_t>& dims,
+             TensorType type, bool needBackward)
+      : name_(name), needBackward_(needBackward), dims_(dims), type_(type) {}
 
   bool sameNameAndType(const TensorAttr& attr) const {
     return attr.name_ == name_ && attr.type_ == type_;
   }
 
-  bool operator == (const TensorAttr& attr) const {
+  bool operator==(const TensorAttr& attr) const {
     return sameNameAndType(attr) && attr.dims_ == dims_;
   }
 
-  bool operator != (const TensorAttr& attr) const {
+  bool operator!=(const TensorAttr& attr) const {
     return !this->operator==(attr);
   }
 
@@ -130,7 +129,8 @@ class TensorAttr final {
   bool needBackward_{true};
   SmallVec<size_t> dims_;
   TensorType type_;
-  InitializeFN specialResetFunction_;  // when apply reset to tensor, default is reset to zero.
+  InitializeFN specialResetFunction_;  // when apply reset to tensor, default is
+                                       // reset to zero.
 };
 
 using TensorAttrPtr = std::shared_ptr<TensorAttr>;
@@ -152,11 +152,11 @@ class OpMeta final {
                                            SmallVec<Tensor>& outputs,
                                            const Map<std::string, Any> attrs)>;
 
-  using GradFN = std::function<SmallVec<Op>(
-      const SmallVec<TensorAttrPtr>& inputs,
-      const SmallVec<TensorAttrPtr>& outputs,
-      const SmallVec<TensorAttrPtr>& outputsGrad,
-      const SmallVec<TensorAttrPtr>& inputsGrad)>;
+  using GradFN =
+      std::function<SmallVec<Op>(const SmallVec<TensorAttrPtr>& inputs,
+                                 const SmallVec<TensorAttrPtr>& outputs,
+                                 const SmallVec<TensorAttrPtr>& outputsGrad,
+                                 const SmallVec<TensorAttrPtr>& inputsGrad)>;
 
   std::string type_;
   ShapeInfererFN shapeInferer_;
@@ -173,11 +173,10 @@ class Graph final {
   SmallVecN<Op, 10> ops_;
   Map<std::string, memory::TensorBufferPtr> buffers_;
 
-  template <bool failWhenMismatchDims=false>
+  template <bool failWhenMismatchDims = false>
   TensorAttrPtr createOrGetTensor(const std::string& name,
-                           const SmallVec<size_t> & dim,
-                           bool need_backward,
-                           TensorType type) {
+                                  const SmallVec<size_t>& dim,
+                                  bool need_backward, TensorType type) {
     auto attr = std::make_shared<TensorAttr>(name, dim, type, need_backward);
     auto it = tensors_.find(name);
     if (it == tensors_.end()) {
@@ -195,15 +194,15 @@ class Graph final {
   }
 };
 
-using CompileGraphFN = std::function<void (Graph&, const Map<std::string, Any >&)>;
-extern Map<std::string, CompileGraphFN >& compilers();
-inline void compileGraph(Graph* g,
-                         const SmallVec<std::string>& stages,
-                         const Map<std::string, Any >& attrs = Map<std::string, Any>()) {
+using CompileGraphFN =
+    std::function<void(Graph&, const Map<std::string, Any>&)>;
+extern Map<std::string, CompileGraphFN>& compilers();
+inline void compileGraph(
+    Graph* g, const SmallVec<std::string>& stages,
+    const Map<std::string, Any>& attrs = Map<std::string, Any>()) {
   for (auto& key : stages) {
     compilers().at(key)(*g, attrs);
   }
 }
-
 }
 }

@@ -4,8 +4,7 @@
 namespace nnet {
 namespace engine {
 
-static void SgdOpImpl(const SmallVec<Tensor> &inputs,
-                      SmallVec<Tensor> &outputs,
+static void SgdOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs,
                       const Map<std::string, Any> &attrs) {
   auto V = castToEigenArray1D(inputs[0]);
   auto G = castToEigenArray1D(inputs[1]);
@@ -25,12 +24,12 @@ static util::InitFunction init([] {
     meta.type_ = "sgd";
     meta.kernels[graph::kDEVICE_CPU] = SgdOpImpl;
     meta.shapeInferer_ = SgdShapeImpl;
-    meta.attrMeta_.push_back(graph::AttributeMeta::create<float>("learning_rate", "LR for sgd"));
-    auto & attrMeta = meta.attrMeta_.back();
+    meta.attrMeta_.push_back(
+        graph::AttributeMeta::create<float>("learning_rate", "LR for sgd"));
+    auto &attrMeta = meta.attrMeta_.back();
     attrMeta->constraints<float>().defaultValue(0.0001);
     graph::OpMeta::gAllOpMeta_[meta.type_] = meta;
   }
 });
-
 }
 }

@@ -4,8 +4,7 @@
 namespace nnet {
 
 namespace engine {
-static void FCOpImpl(const SmallVec<Tensor> &inputs,
-                     SmallVec<Tensor> &outputs,
+static void FCOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs,
                      const Map<std::string, Any> &attrs) {
   auto X = castToEigenMat(inputs[0]);
   auto W = castToEigenMat(inputs[1]);
@@ -70,7 +69,7 @@ static SmallVec<graph::Op> GetFCGradImpl(
   return {op};
 }
 
-static util::InitFunction init([]{
+static util::InitFunction init([] {
   {
     graph::OpMeta meta;
     meta.type_ = "fc";
@@ -87,8 +86,5 @@ static util::InitFunction init([]{
     graph::OpMeta::gAllOpMeta_[meta.type_] = meta;
   }
 });
-
-
 }
-
 }

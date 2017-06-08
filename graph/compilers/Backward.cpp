@@ -44,24 +44,23 @@ static void backward(Graph& g, const Map<std::string, Any>& attrs) {
     std::transform(I.begin(), I.end(), IG.begin(), transformGradient);
     std::transform(O.begin(), O.end(), OG.begin(), transformGradient);
 
-    for (auto& og: OG) {
+    for (auto& og : OG) {
       if (!og) continue;
       g.tensors_.insert({og->name_, og});
     }
-    for (auto& ig: IG) {
+    for (auto& ig : IG) {
       if (!ig) continue;
       CHECK_EQ(g.tensors_.find(ig->name_), g.tensors_.end());
       g.tensors_.insert({ig->name_, ig});
     }
     auto ops = opMeta.grad(I, O, OG, IG);
-    for (auto& o: ops) {
+    for (auto& o : ops) {
       g.ops_.push_back(o);
     }
   }
 }
 
-
-static util::InitFunction init([]{
+static util::InitFunction init([] {
   compilers().insert({"backward", backward});
 });
 }

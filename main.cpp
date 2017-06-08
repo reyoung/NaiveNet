@@ -3,8 +3,8 @@
 // log(Fatal)
 #include <easylogging++.h>
 #include <mnist/mnist_reader.hpp>
-#include "graph/ComputationGraph.h"
 #include "engine/Engine.h"
+#include "graph/ComputationGraph.h"
 #include "misc/Error.h"
 #include "misc/InitFunction.h"
 
@@ -47,47 +47,55 @@ class GraphBuilder {
   }
 
   graph::TensorAttrPtr crossEntropy(const std::string& paramPrefix,
-                                  graph::TensorAttrPtr input,
-                                  graph::TensorAttrPtr label) {
-    auto loss = graph_->createOrGetTensor(paramPrefix + ".output", {0}, true, graph::kTENSOR_FLOAT32);
+                                    graph::TensorAttrPtr input,
+                                    graph::TensorAttrPtr label) {
+    auto loss = graph_->createOrGetTensor(paramPrefix + ".output", {0}, true,
+                                          graph::kTENSOR_FLOAT32);
     addOp("cross_entropy", {input, label}, {loss});
     return loss;
   }
 
   graph::TensorAttrPtr mean(const std::string& paramPrefix,
-                          graph::TensorAttrPtr input) {
-    auto mean = graph_->createOrGetTensor(paramPrefix + ".output", {0}, true, graph::kTENSOR_FLOAT32);
+                            graph::TensorAttrPtr input) {
+    auto mean = graph_->createOrGetTensor(paramPrefix + ".output", {0}, true,
+                                          graph::kTENSOR_FLOAT32);
     addOp("mean", {input}, {mean});
     return mean;
   }
 
   graph::TensorAttrPtr fullyConnected(const std::string& paramPrefix,
-                                    graph::TensorAttrPtr input, size_t size,
-                                    bool withBias = true,
-                                    const ActivationType& act = kSigmoid,
-                                    bool allocParam = true) {
+                                      graph::TensorAttrPtr input, size_t size,
+                                      bool withBias = true,
+                                      const ActivationType& act = kSigmoid,
+                                      bool allocParam = true) {
     CHECK_EQ(input->dims_.size(), 2UL);
     auto layerWidth = input->dims_[1];
 
     if (allocParam) {
-      memory::TensorBuffer::createOrResizeBuffer<float>(paramPrefix + ".param.weight.0", {layerWidth, size});
+      memory::TensorBuffer::createOrResizeBuffer<float>(
+          paramPrefix + ".param.weight.0", {layerWidth, size});
       if (withBias) {
-        memory::TensorBuffer::createOrResizeBuffer<float>(paramPrefix + ".param.bias", {size});
+        memory::TensorBuffer::createOrResizeBuffer<float>(
+            paramPrefix + ".param.bias", {size});
       }
     }
-    auto paramTensor = graph_->createOrGetTensor(paramPrefix+".param.weight.0", {layerWidth, size}, true,
-                                                 graph::kTENSOR_FLOAT32);
+    auto paramTensor = graph_->createOrGetTensor(
+        paramPrefix + ".param.weight.0", {layerWidth, size}, true,
+        graph::kTENSOR_FLOAT32);
     SmallVec<graph::TensorAttrPtr> inputs = {input, paramTensor, nullptr};
     if (withBias) {
-      auto biasTensor = graph_->createOrGetTensor(paramPrefix+".param.bias",{size, 1}, true, graph::kTENSOR_FLOAT32);
+      auto biasTensor = graph_->createOrGetTensor(
+          paramPrefix + ".param.bias", {size, 1}, true, graph::kTENSOR_FLOAT32);
       inputs.back() = biasTensor;
     }
 
-    auto fcOpOut = graph_->createOrGetTensor(paramPrefix + "fc.output", {0}, true, graph::kTENSOR_FLOAT32);
+    auto fcOpOut = graph_->createOrGetTensor(paramPrefix + "fc.output", {0},
+                                             true, graph::kTENSOR_FLOAT32);
 
     addOp("fc", inputs, {fcOpOut});
 
-    auto finalOutput = graph_->createOrGetTensor(paramPrefix + ".output", {0}, true, graph::kTENSOR_FLOAT32);
+    auto finalOutput = graph_->createOrGetTensor(paramPrefix + ".output", {0},
+                                                 true, graph::kTENSOR_FLOAT32);
 
     addOp(toString(act), {fcOpOut}, {finalOutput});
     return finalOutput;
@@ -110,15 +118,20 @@ int main() {
   nnet::util::InitFunction::apply();
   nnet::graph::Graph g;
   constexpr size_t BATCH_SIZE = 1000;
-  auto buffer = nnet::memory::TensorBuffer::newBuffer<float>("X", {BATCH_SIZE, 784}, nnet::memory::kDEVICE_CPU);
+  auto buffer = nnet::memory::TensorBuffer::newBuffer<float>(
+      "X", {BATCH_SIZE, 784}, nnet::memory::kDEVICE_CPU);
   nnet::api::GraphBuilder builder(&g);
-  auto xTensor = g.createOrGetTensor("X", {BATCH_SIZE, 784}, false, nnet::graph::kTENSOR_FLOAT32);
+  auto xTensor = g.createOrGetTensor("X", {BATCH_SIZE, 784}, false,
+                                     nnet::graph::kTENSOR_FLOAT32);
 
   auto hidden = builder.fullyConnected("fc1", xTensor, 100, true);
   hidden = builder.fullyConnected("fc2", hidden, 100, true);
-  auto prediction = builder.fullyConnected("prediction", hidden, 10, true, nnet::api::kSoftmax);
-  auto labelBuffer = nnet::memory::TensorBuffer::newBuffer<int>("Label", {BATCH_SIZE, 1}, nnet::memory::kDEVICE_CPU);
-  auto labelTensor = g.createOrGetTensor("Label", {BATCH_SIZE, 1}, false, nnet::graph::kTENSOR_INT32);
+  auto prediction = builder.fullyConnected("prediction", hidden, 10, true,
+                                           nnet::api::kSoftmax);
+  auto labelBuffer = nnet::memory::TensorBuffer::newBuffer<int>(
+      "Label", {BATCH_SIZE, 1}, nnet::memory::kDEVICE_CPU);
+  auto labelTensor = g.createOrGetTensor("Label", {BATCH_SIZE, 1}, false,
+                                         nnet::graph::kTENSOR_INT32);
 
   auto loss = builder.crossEntropy("xe_loss", prediction, labelTensor);
   auto avgLoss = builder.mean("avg_loss", loss);
@@ -156,7 +169,6 @@ int main() {
     lossMemTensor.attr_ = avgLoss;
     auto m = nnet::engine::castToEigenArray1D(lossMemTensor);
     LOG(INFO) << "Loss = " << *m.data();
-
   }
 
   return 0;

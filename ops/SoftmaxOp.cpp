@@ -35,10 +35,11 @@ static void softmaxGradImpl(const SmallVec<Tensor> &inputs,
   mat = OG;
   mat.array() *= P.array();  // elemwise mul
   IG.rowwise() -= mat.colwise().sum();
-  IG = IG.array() * P.array(); // elemwise mul
+  IG = IG.array() * P.array();  // elemwise mul
 }
-static void softmaxGradShapeImpl(const SmallVec<graph::TensorAttrPtr> &inputs,
-                                 const SmallVec<graph::TensorAttrPtr> &outputs) {
+static void softmaxGradShapeImpl(
+    const SmallVec<graph::TensorAttrPtr> &inputs,
+    const SmallVec<graph::TensorAttrPtr> &outputs) {
   auto P = inputs[0];
   auto OG = inputs[1];
   auto IG = outputs[0];

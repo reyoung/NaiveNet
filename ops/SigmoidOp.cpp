@@ -14,9 +14,9 @@ static void sigmoidOpImpl(const SmallVec<Tensor> &inputs,
   o = Eigen::tanh(a);
 }
 
-static void sigmoidOpGrad(const SmallVec<Tensor>& inputs,
-                              SmallVec<Tensor>& outputs,
-                              const Map<std::string, Any> &attrs) {
+static void sigmoidOpGrad(const SmallVec<Tensor> &inputs,
+                          SmallVec<Tensor> &outputs,
+                          const Map<std::string, Any> &attrs) {
   auto O = castToEigenArray1D(inputs[0]);
   auto OG = castToEigenArray1D(inputs[1]);
   auto IG = castToEigenArray1DMutable(outputs[0]);
@@ -45,7 +45,6 @@ static SmallVec<graph::Op> GetSigmoidGradImpl(
   op.outputs_ = {IG[0]};
   return {op};
 }
-
 
 static util::InitFunction __init__([] {
   {

@@ -36,12 +36,12 @@ class TensorBuffer {
 
   template <typename T, typename Container = std::initializer_list<size_t>>
   static std::shared_ptr<TensorBuffer> createOrResizeBuffer(
-      const std::string &name, Container dims, Device dev = kDEVICE_CPU) {
+      const std::string& name, Container dims, Device dev = kDEVICE_CPU) {
     auto it = memory::TensorBuffer::gTensorBuffers.find(name);
     if (it == memory::TensorBuffer::gTensorBuffers.end()) {
       return memory::TensorBuffer::newBuffer<T>(name, dims, dev);
     } else {
-      it->second->resize(sizeof(T)*details::product(dims));
+      it->second->resize(sizeof(T) * details::product(dims));
       return it->second;
     }
   }
