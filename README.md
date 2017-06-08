@@ -9,7 +9,7 @@ The lines of code should be less than 2000 or 3000, and should complete the foll
 3. [Done] forward a fast forward network.
 4. [Done] backward a fast forward network.
 5. [Done] Abstract Graph Compiler concept.
-5. [Doing] Optimization.
+5. [Done] Optimization.
 6. [TODO] Recurrent Neural Network.
 7. [TODO] Dynamic Network.
 8. [TODO] MultiThread Engine.

@@ -109,7 +109,7 @@ class GraphBuilder {
 int main() {
   nnet::util::InitFunction::apply();
   nnet::graph::Graph g;
-  constexpr size_t BATCH_SIZE = 1;
+  constexpr size_t BATCH_SIZE = 1000;
   auto buffer = nnet::memory::TensorBuffer::newBuffer<float>("X", {BATCH_SIZE, 784}, nnet::memory::kDEVICE_CPU);
   nnet::api::GraphBuilder builder(&g);
   auto xTensor = g.createOrGetTensor("X", {BATCH_SIZE, 784}, false, nnet::graph::kTENSOR_FLOAT32);
@@ -124,6 +124,7 @@ int main() {
   auto avgLoss = builder.mean("avg_loss", loss);
 
   builder.backward(avgLoss);
+  nnet::graph::compileGraph(&g, {"optimizer"});
 
   nnet::engine::NaiveEngine engine(g);
   engine.randomize();
