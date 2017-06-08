@@ -1,5 +1,5 @@
-#include "Engine.h"
-#include "Register.h"
+#include "engine/Engine.h"
+#include "misc/InitFunction.h"
 
 namespace nnet {
 

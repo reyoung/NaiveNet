@@ -3,9 +3,9 @@
 #include <functional>
 #include <typeinfo>
 #include "ComputationGraph.h"
-#include "Error.h"
-#include "TensorBuffer.h"
-#include "Typedef.h"
+#include "misc/Error.h"
+#include "memory/TensorBuffer.h"
+#include "misc/Typedef.h"
 
 namespace nnet {
 namespace graph {

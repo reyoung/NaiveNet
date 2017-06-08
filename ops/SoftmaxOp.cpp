@@ -2,8 +2,8 @@
 // Created by baidu on 2017/6/5.
 //
 
-#include "Engine.h"
-#include "Register.h"
+#include "engine/Engine.h"
+#include "misc/InitFunction.h"
 
 namespace nnet {
 namespace engine {

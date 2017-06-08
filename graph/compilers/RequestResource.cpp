@@ -1,5 +1,5 @@
-#include "../ComputationGraph.h"
-#include "../Register.h"
+#include "graph/ComputationGraph.h"
+#include "misc/InitFunction.h"
 
 namespace nnet {
 namespace graph {

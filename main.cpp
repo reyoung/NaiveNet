@@ -3,10 +3,10 @@
 // log(Fatal)
 #include <easylogging++.h>
 #include <mnist/mnist_reader.hpp>
-#include "ComputationGraph.h"
-#include "Engine.h"
-#include "Error.h"
-#include "Register.h"
+#include "graph/ComputationGraph.h"
+#include "engine/Engine.h"
+#include "misc/Error.h"
+#include "misc/InitFunction.h"
 
 INITIALIZE_EASYLOGGINGPP
 

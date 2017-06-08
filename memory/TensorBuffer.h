@@ -7,8 +7,8 @@
 #include <easylogging++.h>
 #include <cstddef>
 #include <memory>
-#include "Error.h"
-#include "Typedef.h"
+#include "misc/Error.h"
+#include "misc/Typedef.h"
 
 namespace nnet {
 namespace memory {

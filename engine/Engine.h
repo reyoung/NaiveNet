@@ -1,7 +1,7 @@
 #pragma once
 #include <Eigen/Dense>
 #include <boost/algorithm/string.hpp>
-#include "ComputationGraph.h"
+#include "graph/ComputationGraph.h"
 
 namespace nnet {
 namespace engine {
