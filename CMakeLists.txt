@@ -11,5 +11,5 @@ add_definitions(-DELPP_FEATURE_ALL)
 set(EASYLOGGINGPP_SRC ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/easyloggingpp/src/easylogging++.cc)
 set(SOURCE_FILES ${EASYLOGGINGPP_SRC} main.cpp ComputationGraph.cpp Error.h
         Register.h SigmoidOp.cpp FullyConnectedOp.cpp
-        TensorBuffer.cpp TensorBuffer.h Engine.cpp Typedef.h SoftmaxOp.cpp CrossEntropyOp.cpp MeanOp.cpp)
+        TensorBuffer.cpp TensorBuffer.h Engine.cpp Typedef.h SoftmaxOp.cpp CrossEntropyOp.cpp MeanOp.cpp graph_compilers/requestOrResizeBuffers.cpp)
 add_executable(NaiveNet ${SOURCE_FILES})

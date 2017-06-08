@@ -109,11 +109,29 @@ class Tensor final {
 class TensorAttr final {
  public:
   using InitializeFN = std::function<void(Tensor)>;
+  TensorAttr() = default;
+  TensorAttr(const std::string& name,
+             const SmallVec<size_t>& dims,
+             TensorType type,
+             bool needBackward): name_(name), needBackward_(needBackward), dims_(dims), type_(type) {}
+
+  bool sameNameAndType(const TensorAttr& attr) const {
+    return attr.name_ == name_ && attr.type_ == type_;
+  }
+
+  bool operator == (const TensorAttr& attr) const {
+    return sameNameAndType(attr) && attr.dims_ == dims_;
+  }
+
+  bool operator != (const TensorAttr& attr) const {
+    return !this->operator==(attr);
+  }
+
   std::string name_;
-  bool need_backward_{false};
+  bool needBackward_{true};
   SmallVec<size_t> dims_;
   TensorType type_;
-  InitializeFN specialResetFunction_;
+  InitializeFN specialResetFunction_;  // when apply reset to tensor, default is reset to zero.
 };
 
 
@@ -149,14 +167,38 @@ class OpMeta final {
   static Map<std::string, OpMeta> gAllOpMeta_;
 };
 
+
+using TensorAttrPtr = std::shared_ptr<TensorAttr>;
+
 class Graph final {
  public:
-  Map<std::string, TensorAttr> tensors_;
+  Map<std::string, TensorAttrPtr> tensors_;
   SmallVecN<Op, 10> ops_;
+
+  template <bool failWhenMismatchDims=false>
+  TensorAttrPtr createOrGetTensor(const std::string& name,
+                           const SmallVec<size_t> & dim,
+                           bool need_backward,
+                           TensorType type) {
+    auto attr = std::make_shared<TensorAttr>(name, dim, type, need_backward);
+    auto it = tensors_.find(name);
+    if (it == tensors_.end()) {
+      tensors_.insert({attr->name_, attr});
+    } else {
+      if (failWhenMismatchDims) {
+        CHECK_EQ(*it->second, *attr) << "Dimension mismatch";
+      } else {
+        CHECK(attr->sameNameAndType(*it->second));
+        it->second->dims_ = attr->dims_;
+      }
+      attr = it->second;
+    }
+    return attr;
+  }
 };
 
 using CompileGraphFN = std::function<Graph (const Graph&)>;
-
+extern Map<std::string, CompileGraphFN >& compilers();
 
 }
 }

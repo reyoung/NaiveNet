@@ -7,5 +7,10 @@
 namespace nnet {
 namespace graph {
 Map<std::string, OpMeta> OpMeta::gAllOpMeta_;
+
+extern Map<std::string, CompileGraphFN >& compilers() {
+  static Map<std::string, CompileGraphFN > gCompilers;
+  return gCompilers;
+};
 }
 }
