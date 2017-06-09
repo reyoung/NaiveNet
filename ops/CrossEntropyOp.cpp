@@ -1,10 +1,7 @@
-#include <cmath>
-#include "engine/Engine.h"
-#include "misc/InitFunction.h"
-#include "misc/CastEigen.h"
+#include "EigenOp-inl.h"
 
 namespace nnet {
-namespace engine {
+namespace eigen_ops {
 
 static void XEOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs, const Map<std::string, Any> &attrs) {
   auto p = (float *)(inputs[0].buffer_->get());
@@ -21,7 +18,7 @@ static void XEOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs, 
   }
 }
 
-static void XEShapeImpl(const SmallVec<graph::TensorAttrPtr> &inputs, const SmallVec<graph::TensorAttrPtr> &outputs) {
+static void XEShapeImpl(const SmallVec<TensorAttrPtr> &inputs, const SmallVec<TensorAttrPtr> &outputs) {
   CHECK_EQ(inputs[0]->dims_[0], inputs[1]->dims_[0]);
   CHECK_EQ(inputs[1]->type_, graph::kTENSOR_INT32);
   outputs[0]->dims_ = {inputs[0]->dims_[0], 1};
@@ -37,8 +34,8 @@ static void XEOpGradImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outpu
   for (size_t i = 0; i < numSamples; ++i, out += dim, grad += dim) {
     grad[lbl[i]] -= 1 / out[lbl[i]];
   }
-  auto GO = eigen::cast<eigen::Vector>(inputs[2]).array();  // coeff
-  auto GI = eigen::cast<eigen::Matrix>(outputs[0]).array();
+  auto GO = cast<Vector>(inputs[2]).array();  // coeff
+  auto GI = cast<Matrix>(outputs[0]).array();
   GI.colwise() *= GO;
 }
 
@@ -55,9 +52,8 @@ static void XEGradShapeImpl(const SmallVec<graph::TensorAttrPtr> &inputs,
   GI->dims_ = P->dims_;
 }
 
-static SmallVec<graph::Op> GetXeGradOp(const SmallVec<graph::TensorAttrPtr> &I, const SmallVec<graph::TensorAttrPtr> &O,
-                                       const SmallVec<graph::TensorAttrPtr> &OG,
-                                       const SmallVec<graph::TensorAttrPtr> &IG) {
+static SmallVec<graph::Op> GetXeGradOp(const SmallVec<TensorAttrPtr> &I, const SmallVec<TensorAttrPtr> &O,
+                                       const SmallVec<TensorAttrPtr> &OG, const SmallVec<TensorAttrPtr> &IG) {
   graph::Op op;
   op.type_ = "cross_entropy_grad";
   op.inputs_ = {I[0], I[1], OG[0]};
@@ -65,7 +61,7 @@ static SmallVec<graph::Op> GetXeGradOp(const SmallVec<graph::TensorAttrPtr> &I, 
   return {op};
 }
 
-static util::InitFunction __init__([] {
+static InitFunction __init__([] {
   {
     graph::OpMeta meta;
     meta.type_ = "cross_entropy";

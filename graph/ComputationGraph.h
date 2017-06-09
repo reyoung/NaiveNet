@@ -30,9 +30,7 @@ class Constraints final : public BaseConstraints {
   }
 
   Constraints<T>& defaultValue(const T& defaultVal) {
-    return add([=](T* attr, bool) {
-      *attr = defaultVal;
-    });
+    return add([=](T* attr, bool) { *attr = defaultVal; });
   }
 
   void check(const std::string& name, Map<std::string, Any>* attrs) override {
