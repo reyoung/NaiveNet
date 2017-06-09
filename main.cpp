@@ -54,6 +54,12 @@ class GraphBuilder {
     return loss;
   }
 
+  graph::TensorAttrPtr errorRate(const std::string& paramPrefix, graph::TensorAttrPtr prediction, graph::TensorAttrPtr label) {
+    auto errorRate = graph_->createOrGetTensor(paramPrefix, {0}, false, graph::kTENSOR_FLOAT32);
+    addOp("error_rate", {prediction, label}, {errorRate});
+    return errorRate;
+  }
+
   graph::TensorAttrPtr mean(const std::string& paramPrefix, graph::TensorAttrPtr input) {
     auto mean = graph_->createOrGetTensor(paramPrefix + ".output", {0}, true, graph::kTENSOR_FLOAT32);
     addOp("mean", {input}, {mean});
@@ -103,7 +109,7 @@ class GraphBuilder {
 }
 }
 
-static void TrainMnistOnePass(bool printGradMean = false) {
+static void TrainMnistOnePass(size_t numPasses = 10, bool printGradMean = false) {
   nnet::graph::Graph g;
   constexpr size_t BATCH_SIZE = 1000;
   auto buffer = nnet::memory::TensorBuffer::newBuffer<float>("X", {BATCH_SIZE, 784}, nnet::memory::kDEVICE_CPU);
@@ -115,43 +121,44 @@ static void TrainMnistOnePass(bool printGradMean = false) {
   auto prediction = builder.fullyConnected("prediction", hidden, 10, true, nnet::api::kSoftmax);
   auto labelBuffer = nnet::memory::TensorBuffer::newBuffer<int>("Label", {BATCH_SIZE, 1}, nnet::memory::kDEVICE_CPU);
   auto labelTensor = g.createOrGetTensor("Label", {BATCH_SIZE, 1}, false, nnet::graph::kTENSOR_INT32);
-
   auto loss = builder.crossEntropy("xe_loss", prediction, labelTensor);
+  auto errorRate = builder.errorRate("error_rate", prediction, labelTensor);
   auto avgLoss = builder.mean("avg_loss", loss);
 
   builder.backward(avgLoss);
-  nnet::graph::compileGraph(&g, {"optimizer"}, {{"optimizer", std::string("sgd")}, {"learning_rate", 0.005f}});
+  nnet::graph::compileGraph(&g, {"optimizer"}, {{"optimizer", std::string("sgd")}, {"learning_rate", 0.05f}});
 
   nnet::engine::NaiveEngine engine(g);
   engine.randomize();
 
   auto dataset = mnist::read_dataset_direct<std::vector, std::vector<uint8_t>>("./3rdparty/mnist/");
 
-  for (size_t i = 0; i < dataset.training_images.size() / BATCH_SIZE; ++i) {
-    auto buf = (float*)buffer->get();
-    auto labelBuf = (int*)labelBuffer->get();
-    for (size_t j = 0; j < BATCH_SIZE; ++j) {
-      auto& img = dataset.training_images[j + i * BATCH_SIZE];
-      auto& lbl = dataset.training_labels[j + i * BATCH_SIZE];
-      for (size_t k = 0; k < 784; ++k) {
-        buf[j * 784 + k] = img[k];
+  for (size_t passId = 0; passId < numPasses; ++ passId) {
+    for (size_t i = 0; i < dataset.training_images.size() / BATCH_SIZE; ++i) {
+      auto buf = (float *) buffer->get();
+      auto labelBuf = (int *) labelBuffer->get();
+      for (size_t j = 0; j < BATCH_SIZE; ++j) {
+        auto &img = dataset.training_images[j + i * BATCH_SIZE];
+        auto &lbl = dataset.training_labels[j + i * BATCH_SIZE];
+        for (size_t k = 0; k < 784; ++k) {
+          buf[j * 784 + k] = img[k];
+        }
+        labelBuf[j] = lbl;
       }
-      labelBuf[j] = lbl;
+      nnet::engine::Tensor inputTensor;
+      inputTensor.buffer_ = buffer;
+      inputTensor.attr_ = xTensor;
+      nnet::eigen::cast<nnet::eigen::Matrix>(inputTensor).array() /= 255.0;
+      engine.resetOrCreateGradient();
+      engine.run(false);
+      if (printGradMean) {
+        engine.printMean();  // print mean grad of params
+      }
+      auto avgLossArr = nnet::eigen::cast<nnet::eigen::Vector>(g.getTensor(avgLoss->name_)).array();
+      auto errRateArr = nnet::eigen::cast<nnet::eigen::Vector>(g.getTensor(errorRate->name_)).array();
+      LOG(INFO) << "MNIST pass-id="<<passId<<" batch-id=" << i << " XE-Loss = " << *avgLossArr.data()
+                << " error_rate = " << *errRateArr.data() * 100 << "%";
     }
-    nnet::engine::Tensor inputTensor;
-    inputTensor.buffer_ = buffer;
-    inputTensor.attr_ = xTensor;
-    nnet::eigen::cast<nnet::eigen::Matrix>(inputTensor).array() /= 255.0;
-    engine.resetOrCreateGradient();
-    engine.run(false);
-    if (printGradMean) {
-      engine.printMean();  // print mean grad of params
-    }
-    nnet::engine::Tensor lossMemTensor;
-    lossMemTensor.buffer_ = nnet::memory::TensorBuffer::gTensorBuffers.at(avgLoss->name_);
-    lossMemTensor.attr_ = avgLoss;
-    auto m = nnet::eigen::cast<nnet::eigen::Vector>(lossMemTensor).array();
-    LOG(INFO) << "MNIST batch-id=" << i << " XE-Loss = " << *m.data();
   }
 }
 

@@ -10,3 +10,6 @@
 [submodule "3rdparty/mnist"]
 	path = 3rdparty/mnist
 	url = https://github.com/wichtounet/mnist.git
+[submodule "3rdparty/Catch"]
+	path = 3rdparty/Catch
+	url = https://github.com/philsquared/Catch.git

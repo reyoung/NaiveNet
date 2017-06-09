@@ -160,6 +160,12 @@ class Graph final {
     }
     return attr;
   }
+
+  Tensor getTensor(const std::string& name) const {
+    auto attr = tensors_.at(name);
+    auto buffer = memory::TensorBuffer::gTensorBuffers.at(name);
+    return Tensor {attr, buffer};
+  }
 };
 
 using CompileGraphFN = std::function<void(Graph&, const Map<std::string, Any>&)>;

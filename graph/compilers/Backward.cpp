@@ -48,7 +48,6 @@ static void backward(Graph& g, const Map<std::string, Any>& attrs) {
     }
     for (auto& ig : IG) {
       if (!ig) continue;
-      CHECK_EQ(g.tensors_.find(ig->name_), g.tensors_.end());
       g.tensors_.insert({ig->name_, ig});
     }
     auto ops = opMeta.grad(I, O, OG, IG);
