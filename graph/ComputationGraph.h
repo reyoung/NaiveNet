@@ -114,6 +114,12 @@ class Op final {
   SmallVec<TensorAttrPtr> inputs_;
   SmallVec<TensorAttrPtr> outputs_;
   Map<std::string, Any> attrs_;
+
+  Op() = default;
+  Op(const std::string& type, const SmallVec<TensorAttrPtr>& inputs, const SmallVec<TensorAttrPtr>& outputs,
+     const Map<std::string, Any>& attr = Map<std::string, Any>()): type_(type), inputs_(inputs), outputs_(outputs),
+                                                                   attrs_(attr) {
+  }
 };
 
 class OpMeta final {

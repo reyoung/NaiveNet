@@ -5,7 +5,9 @@ namespace nnet {
 namespace graph {
 
 static TensorAttrPtr transformGradient(const TensorAttrPtr& ptr) {
-  if (ptr->needBackward_) {
+  if (!ptr) {
+    return nullptr;
+  } else if (ptr->needBackward_) {
     auto retv = std::make_shared<TensorAttr>();
     *retv = *ptr;
     retv->name_ = ptr->name_ + ".grad";

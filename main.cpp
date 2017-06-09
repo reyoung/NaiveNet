@@ -10,8 +10,6 @@
 #include "misc/Error.h"
 #include "misc/InitFunction.h"
 
-INITIALIZE_EASYLOGGINGPP
-
 namespace nnet {
 namespace api {
 enum ActivationType { kSigmoid, kSoftmax };

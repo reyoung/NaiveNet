@@ -8,7 +8,7 @@ static void FCOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs, 
   auto W = cast<Matrix>(inputs[1]);
   auto O = cast<Matrix>(outputs[0]);
   O = X * W;
-  if (inputs.size() == 3) {
+  if (inputs[2].attr_) {
     auto B = eigen::cast<eigen::Vector>(inputs[2]);
     O.rowwise() += B.transpose();
   }
