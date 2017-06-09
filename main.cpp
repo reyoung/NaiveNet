@@ -1,4 +1,5 @@
 #include <iostream>
+#include <Eigen/SparseCore>
 // should use glog instead of elpp, because we could throw a Error when
 // log(Fatal)
 #include <easylogging++.h>
@@ -6,6 +7,7 @@
 #include "engine/Engine.h"
 #include "graph/ComputationGraph.h"
 #include "misc/Error.h"
+#include "misc/CastEigen.h"
 #include "misc/InitFunction.h"
 
 INITIALIZE_EASYLOGGINGPP
@@ -139,7 +141,7 @@ static void TrainMnistOnePass(bool printGradMean = false) {
     nnet::engine::Tensor inputTensor;
     inputTensor.buffer_ = buffer;
     inputTensor.attr_ = xTensor;
-    nnet::engine::castToEigenArray2DMutable(inputTensor) /= 255.0;
+    nnet::eigen::cast<nnet::eigen::Matrix>(inputTensor).array() /= 255.0;
     engine.resetOrCreateGradient();
     engine.run(false);
     if (printGradMean) {
@@ -148,7 +150,7 @@ static void TrainMnistOnePass(bool printGradMean = false) {
     nnet::engine::Tensor lossMemTensor;
     lossMemTensor.buffer_ = nnet::memory::TensorBuffer::gTensorBuffers.at(avgLoss->name_);
     lossMemTensor.attr_ = avgLoss;
-    auto m = nnet::engine::castToEigenArray1D(lossMemTensor);
+    auto m = nnet::eigen::cast<nnet::eigen::Vector>(lossMemTensor).array();
     LOG(INFO) << "MNIST batch-id="<< i <<" XE-Loss = " << *m.data();
   }
 }
@@ -160,5 +162,6 @@ int main() {
     TrainMnistOnePass();
     nnet::memory::TensorBuffer::gTensorBuffers.clear(); // drop all buffer, make context clean.
   }
+
   return 0;
 }

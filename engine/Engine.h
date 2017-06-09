@@ -7,53 +7,8 @@ namespace nnet {
 namespace engine {
 using graph::Tensor;
 
-inline Eigen::Map<const Eigen::VectorXf> castToEigenVec(const Tensor& tensor) {
-  return Eigen::Map<const Eigen::VectorXf>(reinterpret_cast<float*>(tensor.buffer_->get()), tensor.attr_->dims_[0]);
-}
-
-inline Eigen::Map<Eigen::VectorXf> castToEigenVecMutable(const Tensor& tensor) {
-  return Eigen::Map<Eigen::VectorXf>(reinterpret_cast<float*>(tensor.buffer_->get()), tensor.attr_->dims_[0]);
-}
-
-inline Eigen::Map<const Eigen::MatrixXf> castToEigenMat(const Tensor& tensor) {
-  CHECK_EQ(tensor.attr_->dims_.size(), 2UL);
-  return Eigen::Map<const Eigen::MatrixXf>(reinterpret_cast<float*>(tensor.buffer_->get()), tensor.attr_->dims_[0],
-                                           tensor.attr_->dims_[1]);
-}
-
 inline Eigen::Map<const Eigen::ArrayXi> castToEigenIArray1D(const Tensor& tensor) {
   return Eigen::Map<const Eigen::ArrayXi>((int*)tensor.buffer_->get(), tensor.attr_->dims_[0]);
-}
-
-inline Eigen::Map<const Eigen::MatrixXi> castToEigenIMat(const Tensor& tensor) {
-  CHECK_EQ(tensor.attr_->dims_.size(), 2UL);
-  return Eigen::Map<const Eigen::MatrixXi>(reinterpret_cast<int*>(tensor.buffer_->get()), tensor.attr_->dims_[0],
-                                           tensor.attr_->dims_[1]);
-}
-
-inline Eigen::Map<Eigen::MatrixXf> castToEigenMatMutable(Tensor& tensor) {
-  CHECK_EQ(tensor.attr_->dims_.size(), 2UL);
-  return Eigen::Map<Eigen::MatrixXf>(reinterpret_cast<float*>(tensor.buffer_->get()), tensor.attr_->dims_[0],
-                                     tensor.attr_->dims_[1]);
-}
-
-inline Eigen::Map<Eigen::ArrayXXf> castToEigenArray2DMutable(const Tensor& tensor) {
-  return Eigen::Map<Eigen::ArrayXXf>((float*)tensor.buffer_->get(), tensor.attr_->dims_[0], tensor.attr_->dims_[1]);
-}
-
-inline Eigen::Map<const Eigen::ArrayXf> castToEigenArray1D(const Tensor& tensor) {
-  return Eigen::Map<const Eigen::ArrayXf>(reinterpret_cast<float*>(tensor.buffer_->get()),
-                                          details::product(tensor.attr_->dims_));
-}
-
-inline Eigen::Map<const Eigen::ArrayXXf> castToEigenArray2D(const Tensor& tensor) {
-  return Eigen::Map<const Eigen::ArrayXXf>((float*)tensor.buffer_->get(), tensor.attr_->dims_[0],
-                                           tensor.attr_->dims_[1]);
-}
-
-inline Eigen::Map<Eigen::ArrayXf> castToEigenArray1DMutable(const Tensor& tensor) {
-  return Eigen::Map<Eigen::ArrayXf>(reinterpret_cast<float*>(tensor.buffer_->get()),
-                                    details::product(tensor.attr_->dims_));
 }
 
 class Engine {

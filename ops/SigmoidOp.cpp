@@ -1,23 +1,20 @@
-//
-// Created by baidu on 2017/6/5.
-//
-
 #include "engine/Engine.h"
 #include "misc/InitFunction.h"
+#include "misc/CastEigen.h"
 namespace nnet {
 namespace engine {
 static void sigmoidOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs,
                           const Map<std::string, Any> &attrs) {
-  auto a = castToEigenArray1D(inputs[0]);
-  auto o = castToEigenArray1DMutable(outputs[0]);
+  auto a = eigen::cast<eigen::Vector >(inputs[0]).array();
+  auto o = eigen::cast<eigen::Vector >((outputs[0])).array();
   o = Eigen::tanh(a);
 }
 
 static void sigmoidOpGrad(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs,
                           const Map<std::string, Any> &attrs) {
-  auto O = castToEigenArray1D(inputs[0]);
-  auto OG = castToEigenArray1D(inputs[1]);
-  auto IG = castToEigenArray1DMutable(outputs[0]);
+  auto O = eigen::cast<eigen::Vector >(inputs[0]).array();
+  auto OG = eigen::cast<eigen::Vector>(inputs[1]).array();
+  auto IG = eigen::cast<eigen::Vector >(outputs[0]).array();
   IG = OG;
   IG *= 1 - O * O;
 }

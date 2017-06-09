@@ -1,13 +1,14 @@
 #include "engine/Engine.h"
 #include "misc/InitFunction.h"
+#include "misc/CastEigen.h"
 
 namespace nnet {
 namespace engine {
 
 static void SgdOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs, const Map<std::string, Any> &attrs) {
-  auto V = castToEigenArray1D(inputs[0]);
-  auto G = castToEigenArray1D(inputs[1]);
-  auto Target = castToEigenArray1DMutable(outputs[0]);
+  auto V = eigen::cast<eigen::Vector>(inputs[0]).array();
+  auto G = eigen::cast<eigen::Vector>(inputs[1]).array();
+  auto Target = eigen::cast<eigen::Vector>(outputs[0]).array();
   float learning_rate = any_cast<float>(attrs.at("learning_rate"));
   Target = V - learning_rate * G;
 }

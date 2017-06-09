@@ -1,3 +1,4 @@
+#include "misc/CastEigen.h"
 #include "engine/Engine.h"
 #include "misc/InitFunction.h"
 
@@ -5,14 +6,14 @@ namespace nnet {
 namespace engine {
 
 static void MeanOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs, const Map<std::string, Any> &attrs) {
-  auto i = castToEigenArray1D(inputs[0]);
+  auto i = eigen::cast<eigen::Vector >(inputs[0]).array();
   *(float *)(outputs[0].buffer_->get()) = i.mean();
 }
 
 static void MeanGradImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs,
                          const Map<std::string, Any> &attrs) {
-  auto og = castToEigenArray1D(inputs[1]);          // output grad;
-  auto ig = castToEigenArray1DMutable(outputs[0]);  // input grad;
+  auto og = eigen::cast<eigen::Vector >(inputs[1]).array();   // output grad;
+  auto ig = eigen::cast<eigen::Vector >(outputs[0]).array();  // input grad;
   float g = *og.data();
   ig = g / ig.size();
 }

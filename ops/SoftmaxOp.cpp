@@ -4,14 +4,15 @@
 
 #include "engine/Engine.h"
 #include "misc/InitFunction.h"
+#include "misc/CastEigen.h"
 
 namespace nnet {
 namespace engine {
 
 static void softmaxOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs,
                           const Map<std::string, Any> &attrs) {
-  auto X = castToEigenArray2D(inputs[0]);
-  auto P = castToEigenArray2DMutable(outputs[0]);
+  auto X = eigen::cast<eigen::Matrix>(inputs[0]).array();
+  auto P = eigen::cast<eigen::Matrix>(outputs[0]).array();
 
   P = X.exp();
   P.colwise() /= P.rowwise().sum();
@@ -24,9 +25,9 @@ static void softmaxShapeImpl(const SmallVec<graph::TensorAttrPtr> &inputs,
 
 static void softmaxGradImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs,
                             const Map<std::string, Any> &attrs) {
-  auto P = castToEigenMat(inputs[0]);
-  auto OG = castToEigenMat(inputs[1]);
-  auto IG = castToEigenMatMutable(outputs[0]);
+  auto P = eigen::cast<eigen::Matrix>(inputs[0]);
+  auto OG = eigen::cast<eigen::Matrix>(inputs[1]);
+  auto IG = eigen::cast<eigen::Matrix>(outputs[0]);
 
   IG = OG;
   Eigen::MatrixXf mat(OG.rows(), OG.cols());

@@ -1,12 +1,13 @@
 #include "engine/Engine.h"
 #include "misc/InitFunction.h"
+#include "misc/CastEigen.h"
 
 namespace nnet {
 namespace engine {
 static void lookupTable(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs, const Map<std::string, Any> &attrs) {
-  auto WORD = castToEigenIArray1D(inputs[0]);
-  auto WEIGHT = castToEigenMat(inputs[1]).array();
-  auto O = castToEigenArray2DMutable(outputs[0]);
+  auto WORD = eigen::cast<eigen::IVector>(inputs[0]).array();
+  auto WEIGHT = eigen::cast<eigen::Matrix>(inputs[1]).array();
+  auto O = eigen::cast<eigen::Matrix>(outputs[0]).array();
 
   for (size_t i=0; i<WORD.rows(); ++i) {
     auto offset = WORD.data()[i];
@@ -20,6 +21,14 @@ static void fwdShape(const SmallVec<graph::TensorAttrPtr> &inputs, const SmallVe
   auto WEIGHT = inputs[1];
   auto O = outputs[0];
   O->dims_ = {details::product(WORD->dims_), WEIGHT->dims_[1]};
+}
+
+static void lookupTableGrad(const SmallVec<Tensor>& inputs, SmallVec<Tensor>& outputs, const Map<std::string, Any> &attrs) {
+  auto WORD = eigen::cast<eigen::Matrix >(inputs[0]).array();
+  auto OG = eigen::cast<eigen::Matrix>(inputs[1]).array();
+
+  auto WG = eigen::cast<eigen::Matrix>(outputs[0]).array();
+  WG = OG;
 }
 
 static util::InitFunction init([]{

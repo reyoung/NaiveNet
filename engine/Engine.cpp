@@ -1,5 +1,6 @@
 #include "Engine.h"
 #include <random>
+#include "misc/CastEigen.h"
 namespace nnet {
 namespace engine {
 static thread_local std::default_random_engine* gGenerator;
@@ -35,7 +36,7 @@ void NaiveEngine::resetOrCreateGradient(Engine::NameMappingFN fn) const {
     if (tensor.attr_->specialResetFunction_) {
       tensor.attr_->specialResetFunction_(tensor);
     } else {
-      auto tensorArray = engine::castToEigenArray1DMutable(tensor);
+      auto tensorArray = eigen::cast<eigen::Vector>(tensor).array();
       tensorArray = 0.0;
     }
   });
@@ -98,7 +99,7 @@ void NaiveEngine::printMean(NameMappingFN fn) const {
     fn = castFN(&Engine::getGradInGraph);
   }
   this->accessTensor(fn, [](Tensor& tensor) {
-    auto arr = castToEigenArray1D(tensor);
+    auto arr = eigen::cast<eigen::Vector>(tensor).array();
     float mean = arr.mean();
     LOG(INFO) << tensor.attr_->name_ << " mean = " << mean;
   });

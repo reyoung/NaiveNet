@@ -1,6 +1,7 @@
 #include <cmath>
 #include "engine/Engine.h"
 #include "misc/InitFunction.h"
+#include "misc/CastEigen.h"
 
 namespace nnet {
 namespace engine {
@@ -36,8 +37,8 @@ static void XEOpGradImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outpu
   for (size_t i = 0; i < numSamples; ++i, out += dim, grad += dim) {
     grad[lbl[i]] -= 1 / out[lbl[i]];
   }
-  auto GO = castToEigenArray1D(inputs[2]);  // coeff
-  auto GI = castToEigenArray2DMutable(outputs[0]);
+  auto GO = eigen::cast<eigen::Vector>(inputs[2]).array();  // coeff
+  auto GI = eigen::cast<eigen::Matrix>(outputs[0]).array();
   GI.colwise() *= GO;
 }
 

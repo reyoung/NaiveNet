@@ -1,17 +1,18 @@
 #include "engine/Engine.h"
 #include "misc/InitFunction.h"
+#include "misc/CastEigen.h"
 
 namespace nnet {
 namespace engine {
 
 static void FCOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs, const Map<std::string, Any> &attrs) {
-  auto X = castToEigenMat(inputs[0]);
-  auto W = castToEigenMat(inputs[1]);
+  auto X = eigen::cast<eigen::Matrix>(inputs[0]);
+  auto W = eigen::cast<eigen::Matrix>(inputs[1]);
+  auto O = eigen::cast<eigen::Matrix>(outputs[0]);
 
-  auto O = castToEigenMatMutable(outputs[0]);
   O = X * W;
   if (inputs.size() == 3) {
-    auto B = castToEigenVec(inputs[2]);
+    auto B = eigen::cast<eigen::Vector>(inputs[2]);
     O.rowwise() += B.transpose();
   }
 }
@@ -23,20 +24,20 @@ static void FCOpShape(const SmallVec<graph::TensorAttrPtr> &inputs, const SmallV
 
 static void FCGradOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs,
                          const Map<std::string, Any> &attrs) {
-  auto X = castToEigenMat(inputs[0]);
-  auto W = castToEigenMat(inputs[1]);
-  auto GO = castToEigenMat(inputs[2]);
-  auto GW = castToEigenMatMutable(outputs[0]);
+  auto X = eigen::cast<eigen::Matrix>(inputs[0]);
+  auto W = eigen::cast<eigen::Matrix>(inputs[1]);
+  auto GO = eigen::cast<eigen::Matrix>(inputs[2]);
+  auto GW = eigen::cast<eigen::Matrix>(outputs[0]);
   // backward mul
   GW = X.transpose() * GO;
 
   if (outputs[1].attr_ != nullptr) {
-    auto GX = castToEigenMatMutable(outputs[1]);
+    auto GX = eigen::cast<eigen::Matrix>(outputs[1]);
     GX = GO * W.transpose();
   }
 
   if (outputs[2].attr_ != nullptr) {
-    auto GB = castToEigenVecMutable(outputs[2]);
+    auto GB = eigen::cast<eigen::Vector>(outputs[2]);
     GB = GO.colwise().sum();
   }
 }

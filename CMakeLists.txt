@@ -15,5 +15,5 @@ set(SOURCE_FILES ${EASYLOGGINGPP_SRC} main.cpp graph/ComputationGraph.cpp misc/E
         memory/TensorBuffer.cpp memory/TensorBuffer.h engine/Engine.cpp misc/Typedef.h
         ops/SoftmaxOp.cpp ops/CrossEntropyOp.cpp ops/MeanOp.cpp
         graph/compilers/RequestResource.cpp graph/compilers/ShapeInferer.cpp
-        graph/compilers/Backward.cpp ops/SgdOp.cpp graph/compilers/Optimizer.cpp ops/LookupTableOp.cpp)
+        graph/compilers/Backward.cpp ops/SgdOp.cpp graph/compilers/Optimizer.cpp ops/LookupTableOp.cpp misc/CastEigen.h)
 add_executable(NaiveNet ${SOURCE_FILES})
