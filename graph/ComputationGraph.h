@@ -117,9 +117,8 @@ class Op final {
 
   Op() = default;
   Op(const std::string& type, const SmallVec<TensorAttrPtr>& inputs, const SmallVec<TensorAttrPtr>& outputs,
-     const Map<std::string, Any>& attr = Map<std::string, Any>()): type_(type), inputs_(inputs), outputs_(outputs),
-                                                                   attrs_(attr) {
-  }
+     const Map<std::string, Any>& attr = Map<std::string, Any>())
+      : type_(type), inputs_(inputs), outputs_(outputs), attrs_(attr) {}
 };
 
 class OpMeta final {
@@ -137,7 +136,7 @@ class OpMeta final {
   ShapeInfererFN shapeInferer_;
   SmallVec<std::shared_ptr<AttributeMeta>> attrMeta_;
   RunOnDeviceFN kernels[kNUM_DEVICES];
-  GradFN grad;
+  GradFN grad_;
 
   static Map<std::string, OpMeta> gAllOpMeta_;
 };
@@ -170,7 +169,7 @@ class Graph final {
   Tensor getTensor(const std::string& name) const {
     auto attr = tensors_.at(name);
     auto buffer = memory::TensorBuffer::gTensorBuffers.at(name);
-    return Tensor {attr, buffer};
+    return Tensor{attr, buffer};
   }
 };
 

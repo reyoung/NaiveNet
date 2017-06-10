@@ -10,8 +10,8 @@ static void MeanOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs
 
 static void MeanGradImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs,
                          const Map<std::string, Any> &attrs) {
-  auto og = cast<Vector>(inputs[1]).array();   // output grad;
-  auto ig = cast<Vector>(outputs[0]).array();  // input grad;
+  auto og = cast<Vector>(inputs[1]).array();   // output grad_;
+  auto ig = cast<Vector>(outputs[0]).array();  // input grad_;
   float g = *og.data();
   ig = g / ig.size();
 }
@@ -42,7 +42,7 @@ static util::InitFunction init([] {
     meta.type_ = "mean";
     meta.kernels[kDEVICE_CPU] = MeanOpImpl;
     meta.shapeInferer_ = MeanShapeImpl;
-    meta.grad = GetMeanGradOp;
+    meta.grad_ = GetMeanGradOp;
     OpMeta::gAllOpMeta_[meta.type_] = meta;
   }
   {

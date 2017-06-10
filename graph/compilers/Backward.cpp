@@ -52,7 +52,7 @@ static void backward(Graph& g, const Map<std::string, Any>& attrs) {
       if (!ig) continue;
       g.tensors_.insert({ig->name_, ig});
     }
-    auto ops = opMeta.grad(I, O, OG, IG);
+    auto ops = opMeta.grad_(I, O, OG, IG);
     for (auto& o : ops) {
       g.ops_.push_back(o);
     }

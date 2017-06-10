@@ -67,7 +67,7 @@ static InitFunction __init__([] {
     meta.type_ = "cross_entropy";
     meta.kernels[graph::kDEVICE_CPU] = XEOpImpl;
     meta.shapeInferer_ = XEShapeImpl;
-    meta.grad = GetXeGradOp;
+    meta.grad_ = GetXeGradOp;
     graph::OpMeta::gAllOpMeta_[meta.type_] = meta;
   }
   {

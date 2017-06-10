@@ -40,7 +40,7 @@ static util::InitFunction __init__([] {
     meta.type_ = "sigmoid";
     meta.kernels[kDEVICE_CPU] = sigmoidOpImpl;
     meta.shapeInferer_ = sigmoidShapeImpl;
-    meta.grad = GetSigmoidGradImpl;
+    meta.grad_ = GetSigmoidGradImpl;
     OpMeta::gAllOpMeta_[meta.type_] = meta;
   }
   {

@@ -52,7 +52,8 @@ class GraphBuilder {
     return loss;
   }
 
-  graph::TensorAttrPtr errorRate(const std::string& paramPrefix, graph::TensorAttrPtr prediction, graph::TensorAttrPtr label) {
+  graph::TensorAttrPtr errorRate(const std::string& paramPrefix, graph::TensorAttrPtr prediction,
+                                 graph::TensorAttrPtr label) {
     auto errorRate = graph_->createOrGetTensor(paramPrefix, {0}, false, graph::kTENSOR_FLOAT32);
     addOp("error_rate", {prediction, label}, {errorRate});
     return errorRate;
@@ -131,13 +132,13 @@ static void TrainMnistOnePass(size_t numPasses = 10, bool printGradMean = false)
 
   auto dataset = mnist::read_dataset_direct<std::vector, std::vector<uint8_t>>("./3rdparty/mnist/");
 
-  for (size_t passId = 0; passId < numPasses; ++ passId) {
+  for (size_t passId = 0; passId < numPasses; ++passId) {
     for (size_t i = 0; i < dataset.training_images.size() / BATCH_SIZE; ++i) {
-      auto buf = (float *) buffer->get();
-      auto labelBuf = (int *) labelBuffer->get();
+      auto buf = (float*)buffer->get();
+      auto labelBuf = (int*)labelBuffer->get();
       for (size_t j = 0; j < BATCH_SIZE; ++j) {
-        auto &img = dataset.training_images[j + i * BATCH_SIZE];
-        auto &lbl = dataset.training_labels[j + i * BATCH_SIZE];
+        auto& img = dataset.training_images[j + i * BATCH_SIZE];
+        auto& lbl = dataset.training_labels[j + i * BATCH_SIZE];
         for (size_t k = 0; k < 784; ++k) {
           buf[j * 784 + k] = img[k];
         }
@@ -150,11 +151,11 @@ static void TrainMnistOnePass(size_t numPasses = 10, bool printGradMean = false)
       engine.resetOrCreateGradient();
       engine.run(false);
       if (printGradMean) {
-        engine.printMean();  // print mean grad of params
+        engine.printMean();  // print mean grad_ of params
       }
       auto avgLossArr = nnet::eigen::cast<nnet::eigen::Vector>(g.getTensor(avgLoss->name_)).array();
       auto errRateArr = nnet::eigen::cast<nnet::eigen::Vector>(g.getTensor(errorRate->name_)).array();
-      LOG(INFO) << "MNIST pass-id="<<passId<<" batch-id=" << i << " XE-Loss = " << *avgLossArr.data()
+      LOG(INFO) << "MNIST pass-id=" << passId << " batch-id=" << i << " XE-Loss = " << *avgLossArr.data()
                 << " error_rate = " << *errRateArr.data() * 100 << "%";
     }
   }

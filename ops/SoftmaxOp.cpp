@@ -53,7 +53,7 @@ static util::InitFunction init([] {
     meta.type_ = "softmax";
     meta.kernels[kDEVICE_CPU] = softmaxOpImpl;
     meta.shapeInferer_ = softmaxShapeImpl;
-    meta.grad = GetSoftmaxGradOp;
+    meta.grad_ = GetSoftmaxGradOp;
     OpMeta::gAllOpMeta_[meta.type_] = meta;
   }
   {

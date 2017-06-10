@@ -45,7 +45,7 @@ static void FCGradShapeImpl(const SmallVec<TensorAttrPtr> &inputs, const SmallVe
     outputs[1]->dims_ = X->dims_;
   }
   if (outputs[2]) {
-    outputs[2]->dims_ = {W->dims_[1], 1};
+    outputs[2]->dims_ = {1, W->dims_[1]};
   }
 }
 
@@ -64,7 +64,7 @@ static InitFunction init([] {
     meta.type_ = "fc";
     meta.kernels[graph::kDEVICE_CPU] = FCOpImpl;
     meta.shapeInferer_ = FCOpShape;
-    meta.grad = GetFCGradImpl;
+    meta.grad_ = GetFCGradImpl;
     graph::OpMeta::gAllOpMeta_[meta.type_] = meta;
   }
   {
