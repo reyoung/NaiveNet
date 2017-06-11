@@ -13,7 +13,7 @@ static void XEOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs, 
 
   for (decltype(batchSize) i = 0; i < batchSize; ++i) {
     auto label = l[i];
-    CHECK_LT(label, featureSize);
+    CHECK_LT(label, featureSize) << "Feature size = " << featureSize << ", but user given label is " << label;
     loss[i] = -std::log(p[featureSize * i + l[i]]);
   }
 }

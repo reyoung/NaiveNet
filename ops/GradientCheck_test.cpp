@@ -4,6 +4,7 @@
 #include <catch.hpp>
 #include <json.hpp>
 #include <memory>
+#include <random>
 #include "misc/InitFunction.h"
 
 static nnet::graph::Tensor toTensor(const nnet::graph::TensorAttrPtr& ptr) {
@@ -21,6 +22,33 @@ static nnet::graph::Tensor toTensor(const nnet::graph::TensorAttrPtr& ptr) {
 static void randomize(const nnet::graph::Tensor& t) {
   auto m = nnet::eigen::cast<nnet::eigen::Matrix>(t);
   m.setRandom();
+}
+
+static void randomize(const nnet::graph::Tensor& t, int min_value, int max_value) {
+  int* buf = (int*)t.buffer_->get();
+  std::random_device dev;
+  std::mt19937 engine(dev());
+  std::uniform_int_distribution<int> dist(min_value, max_value);
+  for (size_t i=0; i< nnet::details::product(t.attr_->dims_); ++i) {
+    buf[i] = dist(engine);
+  }
+}
+
+static void randomizeProb(const nnet::graph::Tensor& t) {
+  float* buf = (float*)t.buffer_->get();
+  std::random_device dev;
+  std::mt19937 engine(dev());
+  std::uniform_real_distribution<float> dist(0.0f, 2.0f);
+  for (size_t r=0; r<t.attr_->dims_[0]; ++r) {
+    float rowSum = 0.0;
+    for (size_t c=0; c<t.attr_->dims_[1]; ++c) {
+      buf[r*t.attr_->dims_[1] + c] = dist(engine);
+      rowSum += buf[r*t.attr_->dims_[1] + c];
+    }
+    for (size_t c=0; c<t.attr_->dims_[1]; ++c) {
+      buf[r*t.attr_->dims_[1] + c] /= rowSum;
+    }
+  }
 }
 
 #define PBSTR "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||"
@@ -61,8 +89,27 @@ TEST_CASE("GradientCheck", "check_all") {
   nnet::util::InitFunction::apply();
   constexpr float epsilon = 1e-3;
   auto F = nnet::graph::kTENSOR_FLOAT32;
-
   nlohmann::json metaInfos = R"([
+  {
+    "type": "cross_entropy",
+    "inputs": [
+      ["prob", [20, 10], true, "f", true, {
+        "is_prob": true
+      }],
+      ["label", [20, 1], false, "i", false, {
+        "max_value": 9,
+        "min_value": 0
+      }]
+    ],
+    "output": ["output", [20, 1], true, "f", false]
+  },
+  {
+    "type": "sigmoid",
+    "inputs": [
+      ["sigmoid.w", [10, 20], true, "f", true]
+    ],
+    "output": ["output", [10, 20], true, "f", false]
+  },
   {
     "type": "fc",
     "inputs": [
@@ -75,11 +122,11 @@ TEST_CASE("GradientCheck", "check_all") {
   {
     "type": "fc",
     "inputs": [
-      ["input", [100, 200], false, "f", false],
-      ["fc.param", [200, 50], true, "f", true],
+      ["input", [100, 20], false, "f", false],
+      ["fc.param", [20, 10], true, "f", true],
       []
     ],
-    "output": ["output", [100, 50], true, "f", false]
+    "output": ["output", [100, 10], true, "f", false]
   }
 ]
 )"_json;
@@ -99,15 +146,30 @@ TEST_CASE("GradientCheck", "check_all") {
           gcPoint = input.size() - 1;
         }
       }
+      auto & attr = input.back();
+      if (attr == nullptr) continue;
+      if (eachInput.size() == 5UL) {
+        randomize(toTensor(attr));
+      } else {
+        nlohmann::json & randomOption = eachInput[5];
+        if (attr->type_ == nnet::graph::kTENSOR_INT32) {
+          int min = randomOption["min_value"];
+          int max = randomOption["max_value"];
+          randomize(toTensor(attr), min, max);
+        } else {
+          auto it = randomOption.find("is_prob");
+          if (it != randomOption.end()) {
+            bool is_prob = randomOption["is_prob"];
+            randomizeProb(toTensor(attr));
+          } else {
+            LOG(FATAL) << "Not implement";
+          }
+        }
+      }
     }
     REQUIRE(gcPoint != -1UL);
     nnet::graph::TensorAttrPtr output = toAttr(&graph, metaInfo["output"]);
     LOG(INFO) << "Gradient check op " << opType << ", input index=" << gcPoint;
-    // randomize all input
-    for (auto& attr : input) {
-      if (attr == nullptr) continue;
-      randomize(toTensor(attr));
-    }
     auto gcTensor = toTensor(input[gcPoint]);
     graph.ops_.push_back(nnet::graph::Op(opType, input, {output}));
     auto meanOut = graph.createOrGetTensor("mean", {1, 1}, true, nnet::graph::kTENSOR_FLOAT32);
@@ -128,7 +190,7 @@ TEST_CASE("GradientCheck", "check_all") {
           float low = *(float*)m.buffer_->get();
           mW(h, w) += epsilon;
           wGrad(h, w) = (hi - low) / (2 * epsilon);
-          printProgress(((double)(h * wGrad.cols() + w)) / (wGrad.cols() * wGrad.rows()));
+          printProgress(((double)(h * wGrad.cols() + w + 1)) / (wGrad.cols() * wGrad.rows()));
         }
       }
       printf("\n");
