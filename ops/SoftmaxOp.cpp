@@ -18,16 +18,15 @@ static void softmaxShapeImpl(const SmallVec<TensorAttrPtr> &inputs, const SmallV
 
 static void softmaxGradImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs,
                             const Map<std::string, Any> &attrs) {
-  auto P = cast<Matrix>(inputs[0]);
-  auto OG = cast<Matrix>(inputs[1]);
-  auto IG = cast<Matrix>(outputs[0]);
-
-  IG = OG;
-  Matrix mat(OG.rows(), OG.cols());
-  mat = OG;
-  mat.array() *= P.array();  // elemwise mul
-  IG.rowwise() -= mat.colwise().sum();
-  IG = IG.array() * P.array();  // elemwise mul
+  auto Y = cast<Matrix>(inputs[0]);
+  auto DY = cast<Matrix>(inputs[1]);
+  auto DX = cast<Matrix>(outputs[0]);
+  DX.array() = DY.array();
+  for (size_t i=0; i<inputs[0].attr_->dims_[0]; ++i) {
+    float dot = Y.row(i).dot(DY.row(i));
+    DX.row(i).array() -= dot;
+  }
+  DX.array() *= Y.array();
 }
 static void softmaxGradShapeImpl(const SmallVec<TensorAttrPtr> &inputs, const SmallVec<TensorAttrPtr> &outputs) {
   auto P = inputs[0];

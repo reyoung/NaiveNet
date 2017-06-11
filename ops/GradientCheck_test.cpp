@@ -91,6 +91,13 @@ TEST_CASE("GradientCheck", "check_all") {
   auto F = nnet::graph::kTENSOR_FLOAT32;
   nlohmann::json metaInfos = R"([
   {
+    "type": "softmax",
+    "inputs": [
+      ["input", [20, 10], true, "f", true]
+    ],
+    "output": ["output", [20, 10], true, "f", false]
+  },
+  {
     "type": "cross_entropy",
     "inputs": [
       ["prob", [20, 10], true, "f", true, {
