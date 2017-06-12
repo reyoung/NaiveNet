@@ -21,27 +21,9 @@ class TensorBuffer {
 
   virtual ~TensorBuffer() {}
   virtual Device device() const = 0;
-  virtual void copyFrom(const TensorBuffer& o, size_t elemSize = 0, size_t sliceBegin = 0, size_t sliceEnd = 0) = 0;
   virtual void resize(size_t newSize) = 0;
 
   void* get() const { return buf_; }
-
-  static Map<std::string, std::shared_ptr<TensorBuffer>> gTensorBuffers;
-
-  template <typename T, typename Container = std::initializer_list<size_t>>
-  static std::shared_ptr<TensorBuffer> newBuffer(const std::string& name, Container dims, Device dev);
-
-  template <typename T, typename Container = std::initializer_list<size_t>>
-  static std::shared_ptr<TensorBuffer> createOrResizeBuffer(const std::string& name, Container dims,
-                                                            Device dev = kDEVICE_CPU) {
-    auto it = memory::TensorBuffer::gTensorBuffers.find(name);
-    if (it == memory::TensorBuffer::gTensorBuffers.end()) {
-      return memory::TensorBuffer::newBuffer<T>(name, dims, dev);
-    } else {
-      it->second->resize(sizeof(T) * details::product(dims));
-      return it->second;
-    }
-  }
 
   size_t getSize() const { return size_; }
 
@@ -72,26 +54,8 @@ class CpuTensorBuffer : public TensorBuffer {
     }
     size_ = newSize;
   }
-
-  void copyFrom(const TensorBuffer& o, size_t elemSize = 0, size_t sliceBegin = 0, size_t sliceEnd = 0) override {
-    LOG(FATAL) << "Not Implemented";
-  }
 };
 
-template <typename T, typename Container>
-std::shared_ptr<TensorBuffer> TensorBuffer::newBuffer(const std::string& name, Container dims, Device dev) {
-  CHECK_EQ(gTensorBuffers.find(name), gTensorBuffers.end());
-  size_t prod = sizeof(T);
-  prod *= details::product(dims);
-
-  if (dev == kDEVICE_CPU) {
-    gTensorBuffers[name].reset(new CpuTensorBuffer(prod));
-    return gTensorBuffers[name];
-  } else {
-    LOG(FATAL) << "Not Implemented";
-  }
-  return nullptr;
-}
 }
 }
 

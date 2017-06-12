@@ -42,7 +42,7 @@ void NaiveEngine::resetOrCreateGradient(Engine::NameMappingFN fn) const {
   });
 }
 
-static SmallVec<Tensor> toTensor(const SmallVec<graph::TensorAttrPtr>& tensors) {
+static SmallVec<Tensor> toTensor(memory::Workspace& workspace, const SmallVec<graph::TensorAttrPtr>& tensors) {
   SmallVec<Tensor> retv;
   for (auto iptAttr : tensors) {
     retv.emplace_back();
@@ -50,10 +50,8 @@ static SmallVec<Tensor> toTensor(const SmallVec<graph::TensorAttrPtr>& tensors) 
     ipt.attr_ = iptAttr;
     if (ipt.attr_ == nullptr) {
       ipt.buffer_ = nullptr;
-    } else if (ipt.attr_->type_ == graph::kTENSOR_FLOAT32) {
-      ipt.buffer_ = memory::TensorBuffer::createOrResizeBuffer<float>(iptAttr->name_, iptAttr->dims_);
-    } else if (ipt.attr_->type_ == graph::kTENSOR_INT32) {
-      ipt.buffer_ = memory::TensorBuffer::createOrResizeBuffer<int>(iptAttr->name_, iptAttr->dims_);
+    } else {
+      ipt.buffer_ = workspace(ipt.attr_);
     }
   }
   return retv;
@@ -62,12 +60,14 @@ static SmallVec<Tensor> toTensor(const SmallVec<graph::TensorAttrPtr>& tensors) 
 void NaiveEngine::run(bool debug) const {
   graph::Graph g = graph_;
   // Every mini-batch, shape could be changed.
-  graph::compileGraph(&g, {"inferenceShape", "requestResource"});
+  Map<std::string, Any> attrs;
+  attrs["workspace"] = &this->workspace_;
+  graph::compileGraph(&g, {"inferenceShape", "requestResource"}, attrs);
 
   for (auto& op : g.ops_) {
     auto& meta = graph::OpMeta::gAllOpMeta_[op.type_];
-    auto ipt = toTensor(op.inputs_);
-    auto opt = toTensor(op.outputs_);
+    auto ipt = toTensor(workspace_, op.inputs_);
+    auto opt = toTensor(workspace_, op.outputs_);
 
     if (debug) {
       std::ostringstream sout;
@@ -96,7 +96,7 @@ void NaiveEngine::run(bool debug) const {
 
 void NaiveEngine::printMean(NameMappingFN fn) const {
   if (!fn) {
-    fn = castFN(&Engine::getParamInGraph);
+    fn = castFN(&Engine::getGradInGraph);
   }
   this->accessTensor(fn, [](Tensor& tensor) {
     auto arr = eigen::cast<eigen::Vector>(tensor).array();

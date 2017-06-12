@@ -2,6 +2,7 @@
 #include <Eigen/Dense>
 #include <boost/algorithm/string.hpp>
 #include "graph/ComputationGraph.h"
+#include "memory/Workspace.h"
 
 namespace nnet {
 namespace engine {
@@ -10,7 +11,7 @@ using graph::Tensor;
 class Engine {
  public:
   using NameMappingFN = std::function<std::unique_ptr<Tensor>(const std::string& name)>;
-  Engine(const graph::Graph& graph) : graph_{graph} {}
+  Engine(memory::Workspace& w, const graph::Graph& graph) : graph_{graph}, workspace_(w) {}
   virtual ~Engine() {}
 
   virtual void randomize(NameMappingFN fn = nullptr) const = 0;
@@ -22,8 +23,7 @@ class Engine {
   std::unique_ptr<Tensor> getParamInGraph(const std::string& name) {
     if (boost::algorithm::contains(name, ".param") && !boost::algorithm::contains(name, ".grad")) {
       auto t = new Tensor();
-      t->buffer_ = memory::TensorBuffer::gTensorBuffers[name];
-      t->attr_ = graph_.tensors_.at(name);
+      *t = workspace_.getTensor(graph_.tensors_.at(name));
       return std::unique_ptr<Tensor>(t);
     } else {
       return nullptr;
@@ -33,8 +33,7 @@ class Engine {
   std::unique_ptr<Tensor> getGradInGraph(const std::string& name) {
     if (boost::algorithm::contains(name, ".grad")) {
       auto t = new Tensor();
-      t->attr_ = graph_.tensors_.at(name);
-      t->buffer_ = memory::TensorBuffer::createOrResizeBuffer<float>(t->attr_->name_, t->attr_->dims_);
+      *t = workspace_.getTensor(graph_.tensors_.at(name));
       return std::unique_ptr<Tensor>(t);
     } else {
       return nullptr;
@@ -43,11 +42,12 @@ class Engine {
 
  protected:
   const graph::Graph& graph_;
+  memory::Workspace& workspace_;
 };
 
 class NaiveEngine : public Engine {
  public:
-  NaiveEngine(const graph::Graph& graph) : Engine{graph} {}
+  NaiveEngine(memory::Workspace& w, const graph::Graph& graph) : Engine(w, graph) {}
 
   void randomize(Engine::NameMappingFN fn = nullptr) const override;
   void resetOrCreateGradient(NameMappingFN fn = nullptr) const override;

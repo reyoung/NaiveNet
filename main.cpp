@@ -9,6 +9,7 @@
 #include "misc/CastEigen.h"
 #include "misc/Error.h"
 #include "misc/InitFunction.h"
+#include "memory/Workspace.h"
 
 namespace nnet {
 namespace api {
@@ -27,7 +28,7 @@ const char* toString(ActivationType act) {
 
 class GraphBuilder {
  public:
-  explicit inline GraphBuilder(graph::Graph* g) : graph_(g) {}
+  explicit inline GraphBuilder(memory::Workspace& workspace, graph::Graph* g) : graph_(g), workspace_(workspace) {}
 
   void addOp(const std::string& type, const SmallVec<graph::TensorAttrPtr>& inputs,
              const SmallVec<graph::TensorAttrPtr>& outputs,
@@ -71,17 +72,13 @@ class GraphBuilder {
     CHECK_EQ(input->dims_.size(), 2UL);
     auto layerWidth = input->dims_[1];
 
-    if (allocParam) {
-      memory::TensorBuffer::createOrResizeBuffer<float>(paramPrefix + ".param.weight.0", {layerWidth, size});
-      if (withBias) {
-        memory::TensorBuffer::createOrResizeBuffer<float>(paramPrefix + ".param.bias", {size});
-      }
-    }
     auto paramTensor =
         graph_->createOrGetTensor(paramPrefix + ".param.weight.0", {layerWidth, size}, true, graph::kTENSOR_FLOAT32);
+    workspace_(paramTensor);
     SmallVec<graph::TensorAttrPtr> inputs = {input, paramTensor, nullptr};
     if (withBias) {
       auto biasTensor = graph_->createOrGetTensor(paramPrefix + ".param.bias", {size, 1}, true, graph::kTENSOR_FLOAT32);
+      workspace_(biasTensor);
       inputs.back() = biasTensor;
     }
 
@@ -104,6 +101,7 @@ class GraphBuilder {
 
  private:
   graph::Graph* graph_;
+  memory::Workspace& workspace_;
 };
 }
 }
@@ -111,30 +109,30 @@ class GraphBuilder {
 static void TrainMnistOnePass(size_t numPasses = 10, bool printGradMean = false) {
   nnet::graph::Graph g;
   constexpr size_t BATCH_SIZE = 1000;
-  auto buffer = nnet::memory::TensorBuffer::newBuffer<float>("X", {BATCH_SIZE, 784}, nnet::memory::kDEVICE_CPU);
-  nnet::api::GraphBuilder builder(&g);
+  nnet::memory::Workspace w;
+
+  nnet::api::GraphBuilder builder(w, &g);
   auto xTensor = g.createOrGetTensor("X", {BATCH_SIZE, 784}, false, nnet::graph::kTENSOR_FLOAT32);
 
   auto hidden = builder.fullyConnected("fc1", xTensor, 100, true);
   hidden = builder.fullyConnected("fc2", hidden, 100, true);
   auto prediction = builder.fullyConnected("prediction", hidden, 10, true, nnet::api::kSoftmax);
-  auto labelBuffer = nnet::memory::TensorBuffer::newBuffer<int>("Label", {BATCH_SIZE, 1}, nnet::memory::kDEVICE_CPU);
   auto labelTensor = g.createOrGetTensor("Label", {BATCH_SIZE, 1}, false, nnet::graph::kTENSOR_INT32);
   auto loss = builder.crossEntropy("xe_loss", prediction, labelTensor);
   auto errorRate = builder.errorRate("error_rate", prediction, labelTensor);
   auto avgLoss = builder.mean("avg_loss", loss);
 
   builder.backward(avgLoss);
-  nnet::graph::compileGraph(&g, {"optimizer"}, {{"optimizer", std::string("sgd")}, {"learning_rate", 0.01f}});
+  nnet::graph::compileGraph(&g, {"optimizer"}, {{"optimizer", std::string("sgd")}, {"learning_rate", 1.0f}});
 
-  nnet::engine::NaiveEngine engine(g);
+  nnet::engine::NaiveEngine engine(w, g);
   engine.randomize();
 
   auto dataset = mnist::read_dataset_direct<std::vector, std::vector<uint8_t>>("./3rdparty/mnist/");
   for (size_t passId = 0; passId < numPasses; ++passId) {
     for (size_t i = 0; i < dataset.training_images.size() / BATCH_SIZE; ++i) {
-      auto buf = (float*)buffer->get();
-      auto labelBuf = (int*)labelBuffer->get();
+      auto buf = (float*)w(xTensor)->get();
+      auto labelBuf = (int*)w(labelTensor)->get();
       for (size_t j = 0; j < BATCH_SIZE; ++j) {
         auto& img = dataset.training_images[j + i * BATCH_SIZE];
         auto& lbl = dataset.training_labels[j + i * BATCH_SIZE];
@@ -143,17 +141,15 @@ static void TrainMnistOnePass(size_t numPasses = 10, bool printGradMean = false)
         }
         labelBuf[j] = lbl;
       }
-      nnet::engine::Tensor inputTensor;
-      inputTensor.buffer_ = buffer;
-      inputTensor.attr_ = xTensor;
-      nnet::eigen::cast<nnet::eigen::Matrix>(inputTensor).array() /= 255.0;
+      nnet::eigen::cast<nnet::eigen::Matrix>(w.getTensor(xTensor)).array() /= 255.0;
       engine.resetOrCreateGradient();
       engine.run(false);
-//      if (printGradMean) {
-      engine.printMean();  // print mean grad_ of params
-//      }
-      auto avgLossArr = nnet::eigen::cast<nnet::eigen::Vector>(g.getTensor(avgLoss->name_)).array();
-      auto errRateArr = nnet::eigen::cast<nnet::eigen::Vector>(g.getTensor(errorRate->name_)).array();
+      if (printGradMean) {
+        engine.printMean();  // print mean grad_ of params
+      }
+
+      auto avgLossArr = nnet::eigen::cast<nnet::eigen::Vector>(w.getTensor(avgLoss)).array();
+      auto errRateArr = nnet::eigen::cast<nnet::eigen::Vector>(w.getTensor(errorRate)).array();
       LOG(INFO) << "MNIST pass-id=" << passId << " batch-id=" << i << " XE-Loss = " << *avgLossArr.data()
                 << " error_rate = " << *errRateArr.data() * 100 << "%";
     }
@@ -164,8 +160,7 @@ int main() {
   nnet::util::InitFunction::apply();
   bool runMNIST = true;
   if (runMNIST) {
-    TrainMnistOnePass();
-    nnet::memory::TensorBuffer::gTensorBuffers.clear();  // drop all buffer, make context clean.
+    TrainMnistOnePass(10);
   }
 
   return 0;

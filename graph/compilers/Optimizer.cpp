@@ -23,7 +23,6 @@ static void optimizer(Graph& g, const Map<std::string, Any>& attrs) {
           opAttr[attrsIt->first] = attrsIt->second;
         }
       }
-
       op.attrs_ = opAttr;
       op.inputs_ = {it->second, tensorPtr.second};
       op.outputs_ = {it->second};

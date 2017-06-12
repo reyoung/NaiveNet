@@ -12,12 +12,12 @@ add_definitions(-DELPP_FEATURE_ALL)
 set(EASYLOGGINGPP_SRC ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/easyloggingpp/src/easylogging++.cc)
 set(SOURCE_FILES ${EASYLOGGINGPP_SRC} graph/ComputationGraph.cpp misc/Error.h
         misc/InitFunction.h ops/SigmoidOp.cpp ops/FullyConnectedOp.cpp
-        memory/TensorBuffer.cpp memory/TensorBuffer.h engine/Engine.cpp misc/Typedef.h
+        memory/TensorBuffer.h engine/Engine.cpp misc/Typedef.h
         ops/SoftmaxOp.cpp ops/CrossEntropyOp.cpp ops/MeanOp.cpp
-        graph/compilers/RequestResource.cpp graph/compilers/ShapeInferer.cpp
+        graph/compilers/ShapeInferer.cpp
         graph/compilers/Backward.cpp ops/SgdOp.cpp graph/compilers/Optimizer.cpp
         ops/LookupTableOp.cpp misc/CastEigen.h ops/EigenOp-inl.h ops/ErrorRateOp.cpp
-        misc/InitELPP.cpp)
+        misc/InitELPP.cpp memory/Workspace.h graph/compilers/RequestResource.cpp)
 add_library(nnet SHARED ${SOURCE_FILES})
 add_executable(NaiveNet main.cpp)
 target_link_libraries(NaiveNet nnet)

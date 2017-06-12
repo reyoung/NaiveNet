@@ -30,7 +30,7 @@ class Constraints final : public BaseConstraints {
   }
 
   Constraints<T>& defaultValue(const T& defaultVal) {
-    return add([=](T* attr, bool) { *attr = defaultVal; });
+    return add([=](T* attr, bool set) { if(!set){*attr = defaultVal;} });
   }
 
   void check(const std::string& name, Map<std::string, Any>* attrs) override {
@@ -145,7 +145,6 @@ class Graph final {
  public:
   Map<std::string, TensorAttrPtr> tensors_;
   SmallVecN<Op, 10> ops_;
-  Map<std::string, memory::TensorBufferPtr> buffers_;
 
   template <bool failWhenMismatchDims = false>
   TensorAttrPtr createOrGetTensor(const std::string& name, const SmallVec<size_t>& dim, bool need_backward,
@@ -166,11 +165,6 @@ class Graph final {
     return attr;
   }
 
-  Tensor getTensor(const std::string& name) const {
-    auto attr = tensors_.at(name);
-    auto buffer = memory::TensorBuffer::gTensorBuffers.at(name);
-    return Tensor{attr, buffer};
-  }
 };
 
 using CompileGraphFN = std::function<void(Graph&, const Map<std::string, Any>&)>;
