@@ -96,7 +96,7 @@ void NaiveEngine::run(bool debug) const {
 
 void NaiveEngine::printMean(NameMappingFN fn) const {
   if (!fn) {
-    fn = castFN(&Engine::getGradInGraph);
+    fn = castFN(&Engine::getParamInGraph);
   }
   this->accessTensor(fn, [](Tensor& tensor) {
     auto arr = eigen::cast<eigen::Vector>(tensor).array();

@@ -7,10 +7,6 @@ namespace nnet {
 namespace engine {
 using graph::Tensor;
 
-inline Eigen::Map<const Eigen::ArrayXi> castToEigenIArray1D(const Tensor& tensor) {
-  return Eigen::Map<const Eigen::ArrayXi>((int*)tensor.buffer_->get(), tensor.attr_->dims_[0]);
-}
-
 class Engine {
  public:
   using NameMappingFN = std::function<std::unique_ptr<Tensor>(const std::string& name)>;

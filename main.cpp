@@ -125,13 +125,12 @@ static void TrainMnistOnePass(size_t numPasses = 10, bool printGradMean = false)
   auto avgLoss = builder.mean("avg_loss", loss);
 
   builder.backward(avgLoss);
-  nnet::graph::compileGraph(&g, {"optimizer"}, {{"optimizer", std::string("sgd")}, {"learning_rate", 0.05f}});
+  nnet::graph::compileGraph(&g, {"optimizer"}, {{"optimizer", std::string("sgd")}, {"learning_rate", 0.01f}});
 
   nnet::engine::NaiveEngine engine(g);
   engine.randomize();
 
   auto dataset = mnist::read_dataset_direct<std::vector, std::vector<uint8_t>>("./3rdparty/mnist/");
-
   for (size_t passId = 0; passId < numPasses; ++passId) {
     for (size_t i = 0; i < dataset.training_images.size() / BATCH_SIZE; ++i) {
       auto buf = (float*)buffer->get();
@@ -150,9 +149,9 @@ static void TrainMnistOnePass(size_t numPasses = 10, bool printGradMean = false)
       nnet::eigen::cast<nnet::eigen::Matrix>(inputTensor).array() /= 255.0;
       engine.resetOrCreateGradient();
       engine.run(false);
-      if (printGradMean) {
-        engine.printMean();  // print mean grad_ of params
-      }
+//      if (printGradMean) {
+      engine.printMean();  // print mean grad_ of params
+//      }
       auto avgLossArr = nnet::eigen::cast<nnet::eigen::Vector>(g.getTensor(avgLoss->name_)).array();
       auto errRateArr = nnet::eigen::cast<nnet::eigen::Vector>(g.getTensor(errorRate->name_)).array();
       LOG(INFO) << "MNIST pass-id=" << passId << " batch-id=" << i << " XE-Loss = " << *avgLossArr.data()

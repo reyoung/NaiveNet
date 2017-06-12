@@ -13,7 +13,7 @@ static void MeanGradImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outpu
   auto og = cast<Vector>(inputs[1]).array();   // output grad_;
   auto ig = cast<Vector>(outputs[0]).array();  // input grad_;
   float g = *og.data();
-  ig = g / ig.size();
+  ig = g;
 }
 
 static void MeanGradShapeImpl(const SmallVec<TensorAttrPtr> &inputs, const SmallVec<TensorAttrPtr> &outputs) {
