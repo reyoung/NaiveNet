@@ -11,6 +11,7 @@ The lines of code should be less than 2000 or 3000, and should complete the foll
 5. [Done] Abstract Graph Compiler concept.
 5. [Done] Optimization.
 5. [Done] Workspace.
+5. [Done] Use Variable instead of Tensor.
 5. [Doing] Support sparse data type for NLP.
 6. [TODO] Recurrent Neural Network.
 7. [TODO] Dynamic Network.
