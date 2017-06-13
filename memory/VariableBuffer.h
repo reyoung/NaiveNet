@@ -1,9 +1,4 @@
-//
-// Created by baidu on 2017/6/5.
-//
-
-#ifndef NAIVENET_TENSORBUFFER_H
-#define NAIVENET_TENSORBUFFER_H
+#pragma once
 #include <easylogging++.h>
 #include <cstddef>
 #include <memory>
@@ -15,11 +10,11 @@ namespace memory {
 
 enum Device : int { kDEVICE_CPU = 0, kDEVICE_GPU = 1, kNUM_DEVICES };
 
-class TensorBuffer {
+class VariableBuffer {
  public:
-  TensorBuffer(size_t size, size_t capacity) : size_(size), capacity_(capacity) {}
+  VariableBuffer(size_t size, size_t capacity) : size_(size), capacity_(capacity) {}
 
-  virtual ~TensorBuffer() {}
+  virtual ~VariableBuffer() {}
   virtual Device device() const = 0;
   virtual void resize(size_t newSize) = 0;
 
@@ -33,15 +28,15 @@ class TensorBuffer {
   size_t capacity_{0};
 };
 
-using TensorBufferPtr = std::shared_ptr<TensorBuffer>;
+using VariableBufferPtr = std::shared_ptr<VariableBuffer>;
 
-class CpuTensorBuffer : public TensorBuffer {
+class CpuVariableBuffer : public VariableBuffer {
  public:
-  CpuTensorBuffer() = default;
+  CpuVariableBuffer() = default;
 
-  CpuTensorBuffer(size_t size) : TensorBuffer(size, size) { CHECK_EQ(posix_memalign(&buf_, 32UL, size), 0); }
+  CpuVariableBuffer(size_t size) : VariableBuffer(size, size) { CHECK_EQ(posix_memalign(&buf_, 32UL, size), 0); }
 
-  ~CpuTensorBuffer() { free(buf_); }
+  ~CpuVariableBuffer() { free(buf_); }
 
   Device device() const override { return kDEVICE_CPU; }
 
@@ -58,5 +53,3 @@ class CpuTensorBuffer : public TensorBuffer {
 
 }
 }
-
-#endif  // NAIVENET_TENSORBUFFER_H

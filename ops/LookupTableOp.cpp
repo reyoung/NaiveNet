@@ -2,7 +2,7 @@
 
 namespace nnet {
 namespace eigen_ops {
-static void lookupTable(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs, const Map<std::string, Any> &attrs) {
+static void lookupTable(const SmallVec<Variable> &inputs, SmallVec<Variable> &outputs, const Map<std::string, Any> &attrs) {
   auto WORD = cast<IVector>(inputs[0]).array();
   auto WEIGHT = cast<Matrix>(inputs[1]).array();
   auto O = cast<Matrix>(outputs[0]).array();
@@ -14,14 +14,14 @@ static void lookupTable(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &output
   }
 }
 
-static void fwdShape(const SmallVec<TensorAttrPtr> &inputs, const SmallVec<TensorAttrPtr> &outputs) {
+static void fwdShape(const SmallVec<VariableAttrPtr> &inputs, const SmallVec<VariableAttrPtr> &outputs) {
   auto WORD = inputs[0];
   auto WEIGHT = inputs[1];
   auto O = outputs[0];
   O->dims_ = {details::product(WORD->dims_), WEIGHT->dims_[1]};
 }
 
-static void lookupTableGrad(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs,
+static void lookupTableGrad(const SmallVec<Variable> &inputs, SmallVec<Variable> &outputs,
                             const Map<std::string, Any> &attrs) {
   auto OG = cast<Matrix>(inputs[0]).array();
   auto WG = cast<Matrix>(outputs[0]).array();
@@ -40,7 +40,7 @@ static void lookupTableGrad(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &ou
   }
 }
 
-static void lookupTableShape(const SmallVec<TensorAttrPtr> &inputs, const SmallVec<TensorAttrPtr> &outputs) {
+static void lookupTableShape(const SmallVec<VariableAttrPtr> &inputs, const SmallVec<VariableAttrPtr> &outputs) {
   outputs[0]->dims_ = inputs[0]->dims_; // same dim float
   outputs[1]->dims_ = {inputs[0]->dims_[0] + 1, 1UL};
   outputs[2]->dims_ = {inputs[0]->dims_[0] * inputs[0]->dims_[1], 1UL};

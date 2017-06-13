@@ -11,7 +11,7 @@ namespace eigen {
 using Vector = Eigen::Matrix<float, Eigen::Dynamic, 1>;  // for vector, row major and col major are same.
 using IVector = Eigen::Matrix<int, Eigen::Dynamic, 1>;   // Int Vector.
 using Matrix = Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-using Tensor = graph::Tensor;
+using Tensor = graph::Variable;
 
 // cast for matrix like
 template <typename T>

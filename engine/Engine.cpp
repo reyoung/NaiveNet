@@ -11,18 +11,18 @@ std::default_random_engine& getGenerator() {
   return *gGenerator;
 }
 
-#define castFN(__fn__) (std::bind(std::mem_fn(__fn__), this, std::placeholders::_1));
+#define castFN(__fn__) (std::bind(std::mem_fn(__fn__), this, std::placeholders::_1))
 
 void NaiveEngine::randomize(Engine::NameMappingFN fn) const {
   if (!fn) {
     fn = castFN(&Engine::getParamInGraph);
   }
 
-  this->accessTensor(fn, [](Tensor& tensor) {
+  this->accessVar(fn, [](Variable &var) {
     std::uniform_real_distribution<float> generator(-1.0, 1.0);
-    LOG(INFO) << "Randomize " << tensor.attr_->name_;
-    float* buf = (float*)tensor.buffer_->get();
-    for (size_t i = 0; i < tensor.buffer_->getSize() / sizeof(float); ++i) {
+    LOG(INFO) << "Randomize " << var.attr_->name_;
+    float *buf = (float *) var.buffer_->get();
+    for (size_t i = 0; i < var.buffer_->getSize() / sizeof(float); ++i) {
       buf[i] = generator(getGenerator());
     }
   });
@@ -32,19 +32,19 @@ void NaiveEngine::resetOrCreateGradient(Engine::NameMappingFN fn) const {
   if (!fn) {
     fn = castFN(&Engine::getGradInGraph);
   }
-  this->accessTensor(fn, [](Tensor& tensor) {
-    if (tensor.attr_->specialResetFunction_) {
-      tensor.attr_->specialResetFunction_(tensor);
+  this->accessVar(fn, [](Variable &var) {
+    if (var.attr_->specialResetFunction_) {
+      var.attr_->specialResetFunction_(var);
     } else {
-      auto tensorArray = eigen::cast<eigen::Vector>(tensor).array();
-      tensorArray = 0.0;
+      auto varArr = eigen::cast<eigen::Vector>(var).array();
+      varArr = 0.0;
     }
   });
 }
 
-static SmallVec<Tensor> toTensor(memory::Workspace& workspace, const SmallVec<graph::TensorAttrPtr>& tensors) {
-  SmallVec<Tensor> retv;
-  for (auto iptAttr : tensors) {
+static SmallVec<Variable> toVar(memory::Workspace &workspace, const SmallVec<graph::VariableAttrPtr> &vars) {
+  SmallVec<Variable> retv;
+  for (auto iptAttr : vars) {
     retv.emplace_back();
     auto& ipt = retv.back();
     ipt.attr_ = iptAttr;
@@ -66,8 +66,8 @@ void NaiveEngine::run(bool debug) const {
 
   for (auto& op : g.ops_) {
     auto& meta = graph::OpMeta::gAllOpMeta_[op.type_];
-    auto ipt = toTensor(workspace_, op.inputs_);
-    auto opt = toTensor(workspace_, op.outputs_);
+    auto ipt = toVar(workspace_, op.inputs_);
+    auto opt = toVar(workspace_, op.outputs_);
 
     if (debug) {
       std::ostringstream sout;
@@ -98,18 +98,18 @@ void NaiveEngine::printMean(NameMappingFN fn) const {
   if (!fn) {
     fn = castFN(&Engine::getGradInGraph);
   }
-  this->accessTensor(fn, [](Tensor& tensor) {
-    auto arr = eigen::cast<eigen::Vector>(tensor).array();
+  this->accessVar(fn, [](Variable &var) {
+    auto arr = eigen::cast<eigen::Vector>(var).array();
     float mean = arr.mean();
-    LOG(INFO) << tensor.attr_->name_ << " mean = " << mean;
+    LOG(INFO) << var.attr_->name_ << " mean = " << mean;
   });
 }
 
-void NaiveEngine::accessTensor(NameMappingFN fn, std::function<void(Tensor&)> tensorFN) const {
-  for (auto& t : graph_.tensors_) {
-    auto tensor = fn(t.first);
-    if (tensor != nullptr) {
-      tensorFN(*tensor);
+void NaiveEngine::accessVar(NameMappingFN fn, std::function<void(Variable &)> tensorFN) const {
+  for (auto& t : graph_.variables_) {
+    auto var = fn(t.first);
+    if (var != nullptr) {
+      tensorFN(*var);
     }
   }
 }

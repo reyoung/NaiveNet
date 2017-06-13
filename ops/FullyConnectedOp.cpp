@@ -3,7 +3,7 @@
 namespace nnet {
 namespace eigen_ops {
 
-static void FCOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs, const Map<std::string, Any> &attrs) {
+static void FCOpImpl(const SmallVec<Variable> &inputs, SmallVec<Variable> &outputs, const Map<std::string, Any> &attrs) {
   auto X = cast<Matrix>(inputs[0]);
   auto W = cast<Matrix>(inputs[1]);
   auto O = cast<Matrix>(outputs[0]);
@@ -13,13 +13,13 @@ static void FCOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs, 
     O.rowwise() += B.transpose();
   }
 }
-static void FCOpShape(const SmallVec<graph::TensorAttrPtr> &inputs, const SmallVec<graph::TensorAttrPtr> &outputs) {
+static void FCOpShape(const SmallVec<graph::VariableAttrPtr> &inputs, const SmallVec<graph::VariableAttrPtr> &outputs) {
   auto X = inputs[0];
   auto W = inputs[1];
   outputs[0]->dims_ = {X->dims_[0], W->dims_[1]};
 }
 
-static void FCGradOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs,
+static void FCGradOpImpl(const SmallVec<Variable> &inputs, SmallVec<Variable> &outputs,
                          const Map<std::string, Any> &attrs) {
   auto X = cast<Matrix>(inputs[0]);
   auto W = cast<Matrix>(inputs[1]);
@@ -37,7 +37,7 @@ static void FCGradOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outpu
   }
 }
 
-static void FCGradShapeImpl(const SmallVec<TensorAttrPtr> &inputs, const SmallVec<TensorAttrPtr> &outputs) {
+static void FCGradShapeImpl(const SmallVec<VariableAttrPtr> &inputs, const SmallVec<VariableAttrPtr> &outputs) {
   auto X = inputs[0];
   auto W = inputs[1];
   outputs[0]->dims_ = W->dims_;
@@ -49,8 +49,8 @@ static void FCGradShapeImpl(const SmallVec<TensorAttrPtr> &inputs, const SmallVe
   }
 }
 
-static SmallVec<graph::Op> GetFCGradImpl(const SmallVec<TensorAttrPtr> &I, const SmallVec<TensorAttrPtr> &O,
-                                         const SmallVec<TensorAttrPtr> &OG, const SmallVec<TensorAttrPtr> &IG) {
+static SmallVec<graph::Op> GetFCGradImpl(const SmallVec<VariableAttrPtr> &I, const SmallVec<VariableAttrPtr> &O,
+                                         const SmallVec<VariableAttrPtr> &OG, const SmallVec<VariableAttrPtr> &IG) {
   graph::Op op;
   op.type_ = "fc_grad";
   op.inputs_ = {I[0], I[1], OG[0]};

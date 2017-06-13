@@ -3,7 +3,7 @@
 namespace nnet {
 namespace eigen_ops {
 
-static void SgdOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs, const Map<std::string, Any> &attrs) {
+static void SgdOpImpl(const SmallVec<Variable> &inputs, SmallVec<Variable> &outputs, const Map<std::string, Any> &attrs) {
   auto V = cast<Vector>(inputs[0]).array();
   auto G = cast<Vector>(inputs[1]).array();
   auto Target = cast<Vector>(outputs[0]).array();
@@ -11,7 +11,7 @@ static void SgdOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs,
   Target = V - learning_rate * G;
 }
 
-static void SgdShapeImpl(const SmallVec<TensorAttrPtr> &inputs, const SmallVec<TensorAttrPtr> &outputs) {
+static void SgdShapeImpl(const SmallVec<VariableAttrPtr> &inputs, const SmallVec<VariableAttrPtr> &outputs) {
   outputs[0]->dims_ = inputs[0]->dims_;
 }
 

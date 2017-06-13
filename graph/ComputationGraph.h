@@ -3,7 +3,7 @@
 #include <functional>
 #include <typeinfo>
 #include "ComputationGraph.h"
-#include "memory/TensorBuffer.h"
+#include "memory/VariableBuffer.h"
 #include "misc/Error.h"
 #include "misc/Typedef.h"
 
@@ -76,47 +76,47 @@ class AttributeMeta final {
       : name_(name), description_(desc), type_(type), constraints_(std::move(cons)) {}
 };
 
-enum TensorType : size_t { kTENSOR_FLOAT32 = 0, kTENSOR_INT32 = 1 };
-class TensorAttr;
+enum VariableType : size_t { kFLOAT32 = 0, kINT32 = 1 };
+class VariableAttr;
 
-class Tensor final {
+class Variable final {
  public:
-  std::shared_ptr<TensorAttr> attr_;
-  std::shared_ptr<memory::TensorBuffer> buffer_;
+  std::shared_ptr<VariableAttr> attr_;
+  std::shared_ptr<memory::VariableBuffer> buffer_;
 };
 
-class TensorAttr final {
+class VariableAttr final {
  public:
-  using InitializeFN = std::function<void(Tensor)>;
-  TensorAttr() = default;
-  TensorAttr(const std::string& name, const SmallVec<size_t>& dims, TensorType type, bool needBackward)
+  using InitializeFN = std::function<void(Variable)>;
+  VariableAttr() = default;
+  VariableAttr(const std::string& name, const SmallVec<size_t>& dims, VariableType type, bool needBackward)
       : name_(name), needBackward_(needBackward), dims_(dims), type_(type) {}
 
-  bool sameNameAndType(const TensorAttr& attr) const { return attr.name_ == name_ && attr.type_ == type_; }
+  bool sameNameAndType(const VariableAttr& attr) const { return attr.name_ == name_ && attr.type_ == type_; }
 
-  bool operator==(const TensorAttr& attr) const { return sameNameAndType(attr) && attr.dims_ == dims_; }
+  bool operator==(const VariableAttr& attr) const { return sameNameAndType(attr) && attr.dims_ == dims_; }
 
-  bool operator!=(const TensorAttr& attr) const { return !this->operator==(attr); }
+  bool operator!=(const VariableAttr& attr) const { return !this->operator==(attr); }
 
   std::string name_;
   bool needBackward_{true};
   SmallVec<size_t> dims_;
-  TensorType type_;
-  InitializeFN specialResetFunction_;  // when apply reset to tensor, default is
+  VariableType type_;
+  InitializeFN specialResetFunction_;  // when apply reset to vars, default is
                                        // reset to zero.
 };
 
-using TensorAttrPtr = std::shared_ptr<TensorAttr>;
+using VariableAttrPtr = std::shared_ptr<VariableAttr>;
 
 class Op final {
  public:
   std::string type_;
-  SmallVec<TensorAttrPtr> inputs_;
-  SmallVec<TensorAttrPtr> outputs_;
+  SmallVec<VariableAttrPtr> inputs_;
+  SmallVec<VariableAttrPtr> outputs_;
   Map<std::string, Any> attrs_;
 
   Op() = default;
-  Op(const std::string& type, const SmallVec<TensorAttrPtr>& inputs, const SmallVec<TensorAttrPtr>& outputs,
+  Op(const std::string& type, const SmallVec<VariableAttrPtr>& inputs, const SmallVec<VariableAttrPtr>& outputs,
      const Map<std::string, Any>& attr = Map<std::string, Any>())
       : type_(type), inputs_(inputs), outputs_(outputs), attrs_(attr) {}
 };
@@ -124,13 +124,13 @@ class Op final {
 class OpMeta final {
  public:
   using ShapeInfererFN =
-      std::function<void(const SmallVec<TensorAttrPtr>& inputs, const SmallVec<TensorAttrPtr>& outputs)>;
+      std::function<void(const SmallVec<VariableAttrPtr>& inputs, const SmallVec<VariableAttrPtr>& outputs)>;
   using RunOnDeviceFN =
-      std::function<void(const SmallVec<Tensor>& inputs, SmallVec<Tensor>& outputs, const Map<std::string, Any> attrs)>;
+      std::function<void(const SmallVec<Variable>& inputs, SmallVec<Variable>& outputs, const Map<std::string, Any> attrs)>;
 
   using GradFN = std::function<SmallVec<Op>(
-      const SmallVec<TensorAttrPtr>& inputs, const SmallVec<TensorAttrPtr>& outputs,
-      const SmallVec<TensorAttrPtr>& outputsGrad, const SmallVec<TensorAttrPtr>& inputsGrad)>;
+      const SmallVec<VariableAttrPtr>& inputs, const SmallVec<VariableAttrPtr>& outputs,
+      const SmallVec<VariableAttrPtr>& outputsGrad, const SmallVec<VariableAttrPtr>& inputsGrad)>;
 
   std::string type_;
   ShapeInfererFN shapeInferer_;
@@ -143,16 +143,16 @@ class OpMeta final {
 
 class Graph final {
  public:
-  Map<std::string, TensorAttrPtr> tensors_;
+  Map<std::string, VariableAttrPtr> variables_;
   SmallVecN<Op, 10> ops_;
 
   template <bool failWhenMismatchDims = false>
-  TensorAttrPtr createOrGetTensor(const std::string& name, const SmallVec<size_t>& dim, bool need_backward,
-                                  TensorType type) {
-    auto attr = std::make_shared<TensorAttr>(name, dim, type, need_backward);
-    auto it = tensors_.find(name);
-    if (it == tensors_.end()) {
-      tensors_.insert({attr->name_, attr});
+  VariableAttrPtr createOrResizeVar(const std::string &name, const SmallVec<size_t> &dim, bool need_backward,
+                                    VariableType type) {
+    auto attr = std::make_shared<VariableAttr>(name, dim, type, need_backward);
+    auto it = variables_.find(name);
+    if (it == variables_.end()) {
+      variables_.insert({attr->name_, attr});
     } else {
       if (failWhenMismatchDims) {
         CHECK_EQ(*it->second, *attr) << "Dimension mismatch";

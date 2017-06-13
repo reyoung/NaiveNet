@@ -7,12 +7,12 @@
 #include <random>
 #include "misc/InitFunction.h"
 
-static void randomize(const nnet::graph::Tensor& t) {
+static void randomize(const nnet::graph::Variable& t) {
   auto m = nnet::eigen::cast<nnet::eigen::Matrix>(t);
   m.setRandom();
 }
 
-static void randomize(const nnet::graph::Tensor& t, int min_value, int max_value) {
+static void randomize(const nnet::graph::Variable& t, int min_value, int max_value) {
   int* buf = (int*)t.buffer_->get();
   std::random_device dev;
   std::mt19937 engine(dev());
@@ -22,7 +22,7 @@ static void randomize(const nnet::graph::Tensor& t, int min_value, int max_value
   }
 }
 
-static void randomizeProb(const nnet::graph::Tensor& t) {
+static void randomizeProb(const nnet::graph::Variable& t) {
   float* buf = (float*)t.buffer_->get();
   std::random_device dev;
   std::mt19937 engine(dev());
@@ -58,25 +58,25 @@ static nnet::SmallVec<size_t> toDims(const nlohmann::json& a) {
   return dims;
 }
 
-static nnet::graph::TensorAttrPtr toAttr(nnet::graph::Graph* g, const nlohmann::json& j) {
+static nnet::graph::VariableAttrPtr toAttr(nnet::graph::Graph* g, const nlohmann::json& j) {
   if (j.size() == 0) {
     return nullptr;
   }
-  nnet::graph::TensorType type;
+  nnet::graph::VariableType type;
   if (j[3] == "f") {
-    type = nnet::graph::kTENSOR_FLOAT32;
+    type = nnet::graph::kFLOAT32;
   } else if (j[3] == "i") {
-    type = nnet::graph::kTENSOR_INT32;
+    type = nnet::graph::kINT32;
   } else {
     LOG(FATAL) << "unexpected branch";
   }
-  return g->createOrGetTensor(j[0], toDims(j[1]), j[2], type);
+  return g->createOrResizeVar(j[0], toDims(j[1]), j[2], type);
 }
 
 TEST_CASE("GradientCheck", "check_all") {
   nnet::util::InitFunction::apply();
   constexpr float epsilon = 1e-3;
-  auto F = nnet::graph::kTENSOR_FLOAT32;
+  auto F = nnet::graph::kFLOAT32;
   nlohmann::json metaInfos = R"([
   {
     "type": "softmax",
@@ -129,7 +129,7 @@ TEST_CASE("GradientCheck", "check_all") {
   for (nlohmann::json& metaInfo : metaInfos) {
     std::string opType = metaInfo["type"];
     nnet::graph::Graph graph;
-    nnet::SmallVec<nnet::graph::TensorAttrPtr> input;
+    nnet::SmallVec<nnet::graph::VariableAttrPtr> input;
     nlohmann::json& inputJson = metaInfo["inputs"];
     nnet::memory::Workspace workspace;
 
@@ -145,18 +145,18 @@ TEST_CASE("GradientCheck", "check_all") {
       auto & attr = input.back();
       if (attr == nullptr) continue;
       if (eachInput.size() == 5UL) {
-        randomize(workspace.getTensor(attr));
+        randomize(workspace.getVar(attr));
       } else {
         nlohmann::json & randomOption = eachInput[5];
-        if (attr->type_ == nnet::graph::kTENSOR_INT32) {
+        if (attr->type_ == nnet::graph::kINT32) {
           int min = randomOption["min_value"];
           int max = randomOption["max_value"];
-          randomize(workspace.getTensor(attr), min, max);
+          randomize(workspace.getVar(attr), min, max);
         } else {
           auto it = randomOption.find("is_prob");
           if (it != randomOption.end()) {
             bool is_prob = randomOption["is_prob"];
-            randomizeProb(workspace.getTensor(attr));
+            randomizeProb(workspace.getVar(attr));
           } else {
             LOG(FATAL) << "Not implement";
           }
@@ -164,11 +164,11 @@ TEST_CASE("GradientCheck", "check_all") {
       }
     }
     REQUIRE(gcPoint != -1UL);
-    nnet::graph::TensorAttrPtr output = toAttr(&graph, metaInfo["output"]);
+    nnet::graph::VariableAttrPtr output = toAttr(&graph, metaInfo["output"]);
     LOG(INFO) << "Gradient check op " << opType << ", input index=" << gcPoint;
-    auto gcTensor = workspace.getTensor(input[gcPoint]);
+    auto gcTensor = workspace.getVar(input[gcPoint]);
     graph.ops_.push_back(nnet::graph::Op(opType, input, {output}));
-    auto meanOut = graph.createOrGetTensor("mean", {1, 1}, true, nnet::graph::kTENSOR_FLOAT32);
+    auto meanOut = graph.createOrResizeVar("mean", {1, 1}, true, nnet::graph::kFLOAT32);
     graph.ops_.push_back(nnet::graph::Op("mean", {output}, {meanOut}));
     nnet::eigen::Matrix wGrad(gcTensor.attr_->dims_[0], gcTensor.attr_->dims_[1]);
     auto mW = nnet::eigen::cast<nnet::eigen::Matrix>(gcTensor);
@@ -179,7 +179,7 @@ TEST_CASE("GradientCheck", "check_all") {
         for (size_t w = 0; w < wGrad.cols(); ++w) {
           mW(h, w) += epsilon;
           engine.run();
-          auto m = workspace.getTensor(meanOut);
+          auto m = workspace.getVar(meanOut);
           float hi = *(float*)m.buffer_->get();
           mW(h, w) -= 2 * epsilon;
           engine.run();
@@ -196,7 +196,7 @@ TEST_CASE("GradientCheck", "check_all") {
       nnet::graph::compileGraph(&graph, {"backward"}, attrs);
       nnet::engine::NaiveEngine engine(workspace, graph);
       engine.resetOrCreateGradient();
-      auto wg = workspace.getTensor(graph.tensors_.at(gcTensor.attr_->name_ + ".grad"));
+      auto wg = workspace.getVar(graph.variables_.at(gcTensor.attr_->name_ + ".grad"));
       auto mWG = nnet::eigen::cast<nnet::eigen::Matrix>(wg);
       engine.run();
       nnet::eigen::Matrix lower(gcTensor.attr_->dims_[0], gcTensor.attr_->dims_[1]);

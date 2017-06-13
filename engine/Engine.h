@@ -6,11 +6,11 @@
 
 namespace nnet {
 namespace engine {
-using graph::Tensor;
+using graph::Variable;
 
 class Engine {
  public:
-  using NameMappingFN = std::function<std::unique_ptr<Tensor>(const std::string& name)>;
+  using NameMappingFN = std::function<std::unique_ptr<Variable>(const std::string& name)>;
   Engine(memory::Workspace& w, const graph::Graph& graph) : graph_{graph}, workspace_(w) {}
   virtual ~Engine() {}
 
@@ -20,21 +20,21 @@ class Engine {
   virtual void run(bool debug = false) const = 0;
 
  public:
-  std::unique_ptr<Tensor> getParamInGraph(const std::string& name) {
+  std::unique_ptr<Variable> getParamInGraph(const std::string& name) {
     if (boost::algorithm::contains(name, ".param") && !boost::algorithm::contains(name, ".grad")) {
-      auto t = new Tensor();
-      *t = workspace_.getTensor(graph_.tensors_.at(name));
-      return std::unique_ptr<Tensor>(t);
+      auto t = new Variable();
+      *t = workspace_.getVar(graph_.variables_.at(name));
+      return std::unique_ptr<Variable>(t);
     } else {
       return nullptr;
     }
   }
 
-  std::unique_ptr<Tensor> getGradInGraph(const std::string& name) {
+  std::unique_ptr<Variable> getGradInGraph(const std::string& name) {
     if (boost::algorithm::contains(name, ".grad")) {
-      auto t = new Tensor();
-      *t = workspace_.getTensor(graph_.tensors_.at(name));
-      return std::unique_ptr<Tensor>(t);
+      auto t = new Variable();
+      *t = workspace_.getVar(graph_.variables_.at(name));
+      return std::unique_ptr<Variable>(t);
     } else {
       return nullptr;
     }
@@ -55,7 +55,7 @@ class NaiveEngine : public Engine {
   void printMean(NameMappingFN fn = nullptr) const override;
 
  private:
-  void accessTensor(NameMappingFN fn, std::function<void(Tensor&)> tensorFN) const;
+  void accessVar(NameMappingFN fn, std::function<void(Variable &)> tensorFN) const;
 };
 }
 }

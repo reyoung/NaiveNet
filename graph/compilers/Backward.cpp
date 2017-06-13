@@ -4,11 +4,11 @@
 namespace nnet {
 namespace graph {
 
-static TensorAttrPtr transformGradient(const TensorAttrPtr& ptr) {
+static VariableAttrPtr transformGradient(const VariableAttrPtr& ptr) {
   if (!ptr) {
     return nullptr;
   } else if (ptr->needBackward_) {
-    auto retv = std::make_shared<TensorAttr>();
+    auto retv = std::make_shared<VariableAttr>();
     *retv = *ptr;
     retv->name_ = ptr->name_ + ".grad";
     return retv;
@@ -20,10 +20,10 @@ static TensorAttrPtr transformGradient(const TensorAttrPtr& ptr) {
 static void backward(Graph& g, const Map<std::string, Any>& attrs) {
   CHECK_GT(g.ops_.size(), 0);
   auto lossName = any_cast<std::string>(attrs.at("loss_name"));
-  auto& lossTensorAttr = g.tensors_.at(lossName);
-  CHECK_EQ(details::product(lossTensorAttr->dims_), 1UL);
-  CHECK_EQ(lossTensorAttr->type_, kTENSOR_FLOAT32);
-  lossTensorAttr->specialResetFunction_ = [](Tensor t) { *(float*)(t.buffer_->get()) = 1.0; };
+  auto& lossVarAttr = g.variables_.at(lossName);
+  CHECK_EQ(details::product(lossVarAttr->dims_), 1UL);
+  CHECK_EQ(lossVarAttr->type_, kFLOAT32);
+  lossVarAttr->specialResetFunction_ = [](Variable t) { *(float*)(t.buffer_->get()) = 1.0; };
   size_t backwardPoint;
   {
     auto it = attrs.find("backward_point");
@@ -37,20 +37,20 @@ static void backward(Graph& g, const Map<std::string, Any>& attrs) {
     auto& op = g.ops_[backwardPoint];
     auto& opMeta = graph::OpMeta::gAllOpMeta_[op.type_];
 
-    SmallVec<TensorAttrPtr> I = op.inputs_;
-    SmallVec<TensorAttrPtr> O = op.outputs_;
-    SmallVec<TensorAttrPtr> OG(O.size());
-    SmallVec<TensorAttrPtr> IG(I.size());
+    SmallVec<VariableAttrPtr> I = op.inputs_;
+    SmallVec<VariableAttrPtr> O = op.outputs_;
+    SmallVec<VariableAttrPtr> OG(O.size());
+    SmallVec<VariableAttrPtr> IG(I.size());
     std::transform(I.begin(), I.end(), IG.begin(), transformGradient);
     std::transform(O.begin(), O.end(), OG.begin(), transformGradient);
 
     for (auto& og : OG) {
       if (!og) continue;
-      g.tensors_.insert({og->name_, og});
+      g.variables_.insert({og->name_, og});
     }
     for (auto& ig : IG) {
       if (!ig) continue;
-      g.tensors_.insert({ig->name_, ig});
+      g.variables_.insert({ig->name_, ig});
     }
     auto ops = opMeta.grad_(I, O, OG, IG);
     for (auto& o : ops) {

@@ -1,5 +1,5 @@
 #pragma once
-#include "TensorBuffer.h"
+#include "VariableBuffer.h"
 #include "graph/ComputationGraph.h"
 
 namespace nnet {
@@ -7,15 +7,15 @@ namespace memory {
 
 class Workspace final {
 public:
-  Map<std::string, std::shared_ptr<TensorBuffer>> tensorBuffers_;
+  Map<std::string, std::shared_ptr<VariableBuffer>> varBuffers_;
 
   Workspace() = default;
   Workspace(const Workspace& o) = delete;
 
-  std::shared_ptr<TensorBuffer> createBuffer(const std::string& name, size_t size, Device dev) {
+  std::shared_ptr<VariableBuffer> createBuffer(const std::string& name, size_t size, Device dev) {
     if (dev == kDEVICE_CPU) {
-      auto buf = std::make_shared<CpuTensorBuffer>(size);
-      tensorBuffers_.insert({name, buf});
+      auto buf = std::make_shared<CpuVariableBuffer>(size);
+      varBuffers_.insert({name, buf});
       return buf;
     } else {
       LOG(FATAL) << "Not implemented";
@@ -23,21 +23,21 @@ public:
     }
   }
 
-  std::shared_ptr<TensorBuffer> operator()(const graph::TensorAttrPtr & attr) {
+  std::shared_ptr<VariableBuffer> operator()(const graph::VariableAttrPtr & attr) {
     size_t sz = details::product(attr->dims_);
     static_assert(sizeof(float) == sizeof(int), "");
     sz *= sizeof(float);
     return createOrResizeBuffer(attr->name_, sz, kDEVICE_CPU);
   }
 
-  graph::Tensor getTensor(const graph::TensorAttrPtr & attr) {
+  graph::Variable getVar(const graph::VariableAttrPtr &attr) {
     return {attr, this->operator()(attr)};
   }
 
-  std::shared_ptr<TensorBuffer> createOrResizeBuffer(const std::string& name, size_t size, Device dev) {
-    auto it = tensorBuffers_.find(name);
-    if (it != tensorBuffers_.end()) {  // already set
-      std::shared_ptr<TensorBuffer> buf = it->second;
+  std::shared_ptr<VariableBuffer> createOrResizeBuffer(const std::string& name, size_t size, Device dev) {
+    auto it = varBuffers_.find(name);
+    if (it != varBuffers_.end()) {  // already set
+      std::shared_ptr<VariableBuffer> buf = it->second;
       buf->resize(size);
       return buf;
     } else {
@@ -45,15 +45,6 @@ public:
     }
   }
 
-  template <typename T>
-  std::shared_ptr<TensorBuffer> createOrResizeBufferT(const std::string& name, size_t size, Device dev) {
-    return createOrResizeBuffer(name, size * sizeof(T), dev);
-  }
-
-  template <typename T>
-  std::shared_ptr<TensorBuffer> createBufferT(const std::string& name, size_t size, Device dev) {
-    return createBuffer(name, size*sizeof(T), dev);
-  }
 };
 
 }

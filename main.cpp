@@ -30,8 +30,8 @@ class GraphBuilder {
  public:
   explicit inline GraphBuilder(memory::Workspace& workspace, graph::Graph* g) : graph_(g), workspace_(workspace) {}
 
-  void addOp(const std::string& type, const SmallVec<graph::TensorAttrPtr>& inputs,
-             const SmallVec<graph::TensorAttrPtr>& outputs,
+  void addOp(const std::string& type, const SmallVec<graph::VariableAttrPtr>& inputs,
+             const SmallVec<graph::VariableAttrPtr>& outputs,
              const Map<std::string, Any>& attrs = Map<std::string, Any>()) {
     this->graph_->ops_.emplace_back();
     graph::Op& op = this->graph_->ops_.back();
@@ -46,54 +46,54 @@ class GraphBuilder {
     }
   }
 
-  graph::TensorAttrPtr crossEntropy(const std::string& paramPrefix, graph::TensorAttrPtr input,
-                                    graph::TensorAttrPtr label) {
-    auto loss = graph_->createOrGetTensor(paramPrefix + ".output", {0}, true, graph::kTENSOR_FLOAT32);
+  graph::VariableAttrPtr crossEntropy(const std::string& paramPrefix, graph::VariableAttrPtr input,
+                                    graph::VariableAttrPtr label) {
+    auto loss = graph_->createOrResizeVar(paramPrefix + ".output", {0}, true, graph::kFLOAT32);
     addOp("cross_entropy", {input, label}, {loss});
     return loss;
   }
 
-  graph::TensorAttrPtr errorRate(const std::string& paramPrefix, graph::TensorAttrPtr prediction,
-                                 graph::TensorAttrPtr label) {
-    auto errorRate = graph_->createOrGetTensor(paramPrefix, {0}, false, graph::kTENSOR_FLOAT32);
+  graph::VariableAttrPtr errorRate(const std::string& paramPrefix, graph::VariableAttrPtr prediction,
+                                 graph::VariableAttrPtr label) {
+    auto errorRate = graph_->createOrResizeVar(paramPrefix, {0}, false, graph::kFLOAT32);
     addOp("error_rate", {prediction, label}, {errorRate});
     return errorRate;
   }
 
-  graph::TensorAttrPtr mean(const std::string& paramPrefix, graph::TensorAttrPtr input) {
-    auto mean = graph_->createOrGetTensor(paramPrefix + ".output", {0}, true, graph::kTENSOR_FLOAT32);
+  graph::VariableAttrPtr mean(const std::string& paramPrefix, graph::VariableAttrPtr input) {
+    auto mean = graph_->createOrResizeVar(paramPrefix + ".output", {0}, true, graph::kFLOAT32);
     addOp("mean", {input}, {mean});
     return mean;
   }
 
-  graph::TensorAttrPtr fullyConnected(const std::string& paramPrefix, graph::TensorAttrPtr input, size_t size,
+  graph::VariableAttrPtr fullyConnected(const std::string& paramPrefix, graph::VariableAttrPtr input, size_t size,
                                       bool withBias = true, const ActivationType& act = kSigmoid,
                                       bool allocParam = true) {
     CHECK_EQ(input->dims_.size(), 2UL);
     auto layerWidth = input->dims_[1];
 
-    auto paramTensor =
-        graph_->createOrGetTensor(paramPrefix + ".param.weight.0", {layerWidth, size}, true, graph::kTENSOR_FLOAT32);
-    workspace_(paramTensor);
-    SmallVec<graph::TensorAttrPtr> inputs = {input, paramTensor, nullptr};
+    auto paramVar =
+        graph_->createOrResizeVar(paramPrefix + ".param.weight.0", {layerWidth, size}, true, graph::kFLOAT32);
+    workspace_(paramVar);
+    SmallVec<graph::VariableAttrPtr> inputs = {input, paramVar, nullptr};
     if (withBias) {
-      auto biasTensor = graph_->createOrGetTensor(paramPrefix + ".param.bias", {size, 1}, true, graph::kTENSOR_FLOAT32);
-      workspace_(biasTensor);
-      inputs.back() = biasTensor;
+      auto biasVar = graph_->createOrResizeVar(paramPrefix + ".param.bias", {size, 1}, true, graph::kFLOAT32);
+      workspace_(biasVar);
+      inputs.back() = biasVar;
     }
 
-    auto fcOpOut = graph_->createOrGetTensor(paramPrefix + "fc.output", {0}, true, graph::kTENSOR_FLOAT32);
+    auto fcOpOut = graph_->createOrResizeVar(paramPrefix + "fc.output", {0}, true, graph::kFLOAT32);
 
     addOp("fc", inputs, {fcOpOut});
 
-    auto finalOutput = graph_->createOrGetTensor(paramPrefix + ".output", {0}, true, graph::kTENSOR_FLOAT32);
+    auto finalOutput = graph_->createOrResizeVar(paramPrefix + ".output", {0}, true, graph::kFLOAT32);
 
     addOp(toString(act), {fcOpOut}, {finalOutput});
     return finalOutput;
   }
 
   // backward
-  void backward(graph::TensorAttrPtr loss) {
+  void backward(graph::VariableAttrPtr loss) {
     Map<std::string, Any> attrs;
     attrs.insert({"loss_name", loss->name_});
     graph::compileGraph(graph_, {"backward"}, attrs);
@@ -112,14 +112,14 @@ static void TrainMnistOnePass(size_t numPasses = 10, bool printGradMean = false)
   nnet::memory::Workspace w;
 
   nnet::api::GraphBuilder builder(w, &g);
-  auto xTensor = g.createOrGetTensor("X", {BATCH_SIZE, 784}, false, nnet::graph::kTENSOR_FLOAT32);
+  auto xVar = g.createOrResizeVar("X", {BATCH_SIZE, 784}, false, nnet::graph::kFLOAT32);
 
-  auto hidden = builder.fullyConnected("fc1", xTensor, 100, true);
+  auto hidden = builder.fullyConnected("fc1", xVar, 100, true);
   hidden = builder.fullyConnected("fc2", hidden, 100, true);
   auto prediction = builder.fullyConnected("prediction", hidden, 10, true, nnet::api::kSoftmax);
-  auto labelTensor = g.createOrGetTensor("Label", {BATCH_SIZE, 1}, false, nnet::graph::kTENSOR_INT32);
-  auto loss = builder.crossEntropy("xe_loss", prediction, labelTensor);
-  auto errorRate = builder.errorRate("error_rate", prediction, labelTensor);
+  auto labelVar = g.createOrResizeVar("Label", {BATCH_SIZE, 1}, false, nnet::graph::kINT32);
+  auto loss = builder.crossEntropy("xe_loss", prediction, labelVar);
+  auto errorRate = builder.errorRate("error_rate", prediction, labelVar);
   auto avgLoss = builder.mean("avg_loss", loss);
 
   builder.backward(avgLoss);
@@ -131,8 +131,8 @@ static void TrainMnistOnePass(size_t numPasses = 10, bool printGradMean = false)
   auto dataset = mnist::read_dataset_direct<std::vector, std::vector<uint8_t>>("./3rdparty/mnist/");
   for (size_t passId = 0; passId < numPasses; ++passId) {
     for (size_t i = 0; i < dataset.training_images.size() / BATCH_SIZE; ++i) {
-      auto buf = (float*)w(xTensor)->get();
-      auto labelBuf = (int*)w(labelTensor)->get();
+      auto buf = (float*)w(xVar)->get();
+      auto labelBuf = (int*)w(labelVar)->get();
       for (size_t j = 0; j < BATCH_SIZE; ++j) {
         auto& img = dataset.training_images[j + i * BATCH_SIZE];
         auto& lbl = dataset.training_labels[j + i * BATCH_SIZE];
@@ -141,15 +141,15 @@ static void TrainMnistOnePass(size_t numPasses = 10, bool printGradMean = false)
         }
         labelBuf[j] = lbl;
       }
-      nnet::eigen::cast<nnet::eigen::Matrix>(w.getTensor(xTensor)).array() /= 255.0;
+      nnet::eigen::cast<nnet::eigen::Matrix>(w.getVar(xVar)).array() /= 255.0;
       engine.resetOrCreateGradient();
       engine.run(false);
       if (printGradMean) {
         engine.printMean();  // print mean grad_ of params
       }
 
-      auto avgLossArr = nnet::eigen::cast<nnet::eigen::Vector>(w.getTensor(avgLoss)).array();
-      auto errRateArr = nnet::eigen::cast<nnet::eigen::Vector>(w.getTensor(errorRate)).array();
+      auto avgLossArr = nnet::eigen::cast<nnet::eigen::Vector>(w.getVar(avgLoss)).array();
+      auto errRateArr = nnet::eigen::cast<nnet::eigen::Vector>(w.getVar(errorRate)).array();
       LOG(INFO) << "MNIST pass-id=" << passId << " batch-id=" << i << " XE-Loss = " << *avgLossArr.data()
                 << " error_rate = " << *errRateArr.data() * 100 << "%";
     }

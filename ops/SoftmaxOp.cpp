@@ -3,7 +3,7 @@
 namespace nnet {
 namespace eigen_ops {
 
-static void softmaxOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs,
+static void softmaxOpImpl(const SmallVec<Variable> &inputs, SmallVec<Variable> &outputs,
                           const Map<std::string, Any> &attrs) {
   auto X = cast<Matrix>(inputs[0]).array();
   auto P = cast<Matrix>(outputs[0]).array();
@@ -12,11 +12,11 @@ static void softmaxOpImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outp
   P.colwise() /= P.rowwise().sum();
 }
 
-static void softmaxShapeImpl(const SmallVec<TensorAttrPtr> &inputs, const SmallVec<TensorAttrPtr> &outputs) {
+static void softmaxShapeImpl(const SmallVec<VariableAttrPtr> &inputs, const SmallVec<VariableAttrPtr> &outputs) {
   outputs[0]->dims_ = inputs[0]->dims_;
 }
 
-static void softmaxGradImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &outputs,
+static void softmaxGradImpl(const SmallVec<Variable> &inputs, SmallVec<Variable> &outputs,
                             const Map<std::string, Any> &attrs) {
   auto Y = cast<Matrix>(inputs[0]);
   auto DY = cast<Matrix>(inputs[1]);
@@ -28,7 +28,7 @@ static void softmaxGradImpl(const SmallVec<Tensor> &inputs, SmallVec<Tensor> &ou
   }
   DX.array() *= Y.array();
 }
-static void softmaxGradShapeImpl(const SmallVec<TensorAttrPtr> &inputs, const SmallVec<TensorAttrPtr> &outputs) {
+static void softmaxGradShapeImpl(const SmallVec<VariableAttrPtr> &inputs, const SmallVec<VariableAttrPtr> &outputs) {
   auto P = inputs[0];
   auto OG = inputs[1];
   auto IG = outputs[0];
@@ -36,8 +36,8 @@ static void softmaxGradShapeImpl(const SmallVec<TensorAttrPtr> &inputs, const Sm
   CHECK_EQ(OG->dims_, P->dims_);
 }
 
-static SmallVec<Op> GetSoftmaxGradOp(const SmallVec<TensorAttrPtr> &I, const SmallVec<TensorAttrPtr> &O,
-                                     const SmallVec<TensorAttrPtr> &OG, const SmallVec<TensorAttrPtr> &IG) {
+static SmallVec<Op> GetSoftmaxGradOp(const SmallVec<VariableAttrPtr> &I, const SmallVec<VariableAttrPtr> &O,
+                                     const SmallVec<VariableAttrPtr> &OG, const SmallVec<VariableAttrPtr> &IG) {
   Op op;
   op.type_ = "softmax_grad";
   op.inputs_ = {O[0], OG[0]};
