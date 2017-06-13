@@ -3,20 +3,6 @@
 
 namespace nnet {
 namespace graph {
-
-static VariableAttrPtr transformGradient(const VariableAttrPtr& ptr) {
-  if (!ptr) {
-    return nullptr;
-  } else if (ptr->needBackward_) {
-    auto retv = std::make_shared<VariableAttr>();
-    *retv = *ptr;
-    retv->name_ = ptr->name_ + ".grad";
-    return retv;
-  } else {
-    return nullptr;
-  }
-}
-
 static void backward(Graph& g, const Map<std::string, Any>& attrs) {
   CHECK_GT(g.ops_.size(), 0);
   auto lossName = any_cast<std::string>(attrs.at("loss_name"));
@@ -39,19 +25,19 @@ static void backward(Graph& g, const Map<std::string, Any>& attrs) {
 
     SmallVec<VariableAttrPtr> I = op.inputs_;
     SmallVec<VariableAttrPtr> O = op.outputs_;
-    SmallVec<VariableAttrPtr> OG(O.size());
-    SmallVec<VariableAttrPtr> IG(I.size());
-    std::transform(I.begin(), I.end(), IG.begin(), transformGradient);
-    std::transform(O.begin(), O.end(), OG.begin(), transformGradient);
+    SmallVec<VariableAttrPtr> OG;
+    SmallVec<VariableAttrPtr> IG;
+    opMeta.gradVars_(I, O, &OG, &IG);
 
     for (auto& og : OG) {
       if (!og) continue;
-      g.variables_.insert({og->name_, og});
+      og = g.createOrResizeVar<true>(og);
     }
     for (auto& ig : IG) {
       if (!ig) continue;
-      g.variables_.insert({ig->name_, ig});
+      ig = g.createOrResizeVar<true>(ig);
     }
+
     auto ops = opMeta.grad_(I, O, OG, IG);
     for (auto& o : ops) {
       g.ops_.push_back(o);

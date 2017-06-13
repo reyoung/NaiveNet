@@ -136,11 +136,35 @@ class OpMeta final {
       const SmallVec<VariableAttrPtr>& inputs, const SmallVec<VariableAttrPtr>& outputs,
       const SmallVec<VariableAttrPtr>& outputsGrad, const SmallVec<VariableAttrPtr>& inputsGrad)>;
 
+  using GradVariablesOp = std::function<void(
+     const SmallVec<VariableAttrPtr>& I, const SmallVec<VariableAttrPtr>& O,
+     SmallVec<VariableAttrPtr>* IG, SmallVec<VariableAttrPtr>* OG)>;
+
   std::string type_;
   ShapeInfererFN shapeInferer_;
   SmallVec<std::shared_ptr<AttributeMeta>> attrMeta_;
   RunOnDeviceFN kernels[kNUM_DEVICES];
   GradFN grad_;
+  GradVariablesOp gradVars_ {[](const SmallVec<VariableAttrPtr>& I, const SmallVec<VariableAttrPtr>& O,
+                                SmallVec<VariableAttrPtr>* OG, SmallVec<VariableAttrPtr>* IG) {
+    auto transformImpl = [](const VariableAttrPtr& ptr)->VariableAttrPtr {
+      if (!ptr) {
+        return nullptr;
+      } else if (ptr->needBackward_) {
+        auto retv = std::make_shared<VariableAttr>();
+        *retv = *ptr;
+        retv->name_ += ".grad";
+        return retv;
+      } else {
+        return nullptr;
+      }
+    };
+
+    IG->resize(I.size());
+    OG->resize(O.size());
+    std::transform(I.begin(), I.end(), IG->begin(), transformImpl);
+    std::transform(O.begin(), O.end(), OG->begin(), transformImpl);
+  }};
 
   static Map<std::string, OpMeta> gAllOpMeta_;
 };
@@ -154,19 +178,24 @@ class Graph final {
   VariableAttrPtr createOrResizeVar(const std::string& name, const SmallVec<size_t>& dim, bool need_backward,
                                     VariableType type) {
     auto attr = std::make_shared<VariableAttr>(name, dim, type, need_backward);
-    auto it = variables_.find(name);
+    return createOrResizeVar<failWhenMismatchDims>(attr);
+  }
+
+  template <bool failWhenMismatchDims = false>
+  VariableAttrPtr createOrResizeVar(const VariableAttrPtr& ptr) {
+    auto it = variables_.find(ptr->name_);
     if (it == variables_.end()) {
-      variables_.insert({attr->name_, attr});
+      variables_.insert({ptr->name_, ptr});
+      return ptr;
     } else {
       if (failWhenMismatchDims) {
-        CHECK_EQ(*it->second, *attr) << "Dimension mismatch";
+        CHECK_EQ(*it->second, *ptr) << "Dimension mismatch";
       } else {
-        CHECK(attr->sameNameAndType(*it->second));
-        it->second->dims_ = attr->dims_;
+        CHECK(ptr->sameNameAndType(*it->second));
+        it->second->dims_ = ptr->dims_;
       }
-      attr = it->second;
+      return it->second;
     }
-    return attr;
   }
 };
 
