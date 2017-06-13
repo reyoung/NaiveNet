@@ -158,10 +158,18 @@ static void TrainMnistOnePass(size_t numPasses = 10, bool printGradMean = false)
 
 int main() {
   nnet::util::InitFunction::apply();
-  bool runMNIST = true;
+  bool runMNIST = false;
   if (runMNIST) {
     TrainMnistOnePass(10);
   }
+
+  float A[]  = { 5, 8, 3, 6 };
+  int IA[] = { 0, 0, 2, 3, 4 };
+  int JA[] = { 0, 1, 2, 1 };
+
+  Eigen::Map<Eigen::SparseMatrix<float, Eigen::RowMajor>> sm(4, 4, 4, IA, JA, A);
+
+  LOG(INFO) << sm;
 
   return 0;
 }
