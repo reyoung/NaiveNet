@@ -136,18 +136,17 @@ class OpMeta final {
       const SmallVec<VariableAttrPtr>& inputs, const SmallVec<VariableAttrPtr>& outputs,
       const SmallVec<VariableAttrPtr>& outputsGrad, const SmallVec<VariableAttrPtr>& inputsGrad)>;
 
-  using GradVariablesOp = std::function<void(
-     const SmallVec<VariableAttrPtr>& I, const SmallVec<VariableAttrPtr>& O,
-     SmallVec<VariableAttrPtr>* IG, SmallVec<VariableAttrPtr>* OG)>;
+  using GradVariablesOp = std::function<void(const SmallVec<VariableAttrPtr>& I, const SmallVec<VariableAttrPtr>& O,
+                                             SmallVec<VariableAttrPtr>* IG, SmallVec<VariableAttrPtr>* OG)>;
 
   std::string type_;
   ShapeInfererFN shapeInferer_;
   SmallVec<std::shared_ptr<AttributeMeta>> attrMeta_;
   RunOnDeviceFN kernels[kNUM_DEVICES];
   GradFN grad_;
-  GradVariablesOp gradVars_ {[](const SmallVec<VariableAttrPtr>& I, const SmallVec<VariableAttrPtr>& O,
-                                SmallVec<VariableAttrPtr>* OG, SmallVec<VariableAttrPtr>* IG) {
-    auto transformImpl = [](const VariableAttrPtr& ptr)->VariableAttrPtr {
+  GradVariablesOp gradVars_{[](const SmallVec<VariableAttrPtr>& I, const SmallVec<VariableAttrPtr>& O,
+                               SmallVec<VariableAttrPtr>* OG, SmallVec<VariableAttrPtr>* IG) {
+    auto transformImpl = [](const VariableAttrPtr& ptr) -> VariableAttrPtr {
       if (!ptr) {
         return nullptr;
       } else if (ptr->needBackward_) {
