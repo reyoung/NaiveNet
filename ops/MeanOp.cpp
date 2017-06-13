@@ -3,7 +3,8 @@
 namespace nnet {
 namespace eigen_ops {
 
-static void MeanOpImpl(const SmallVec<Variable> &inputs, SmallVec<Variable> &outputs, const Map<std::string, Any> &attrs) {
+static void MeanOpImpl(const SmallVec<Variable> &inputs, SmallVec<Variable> &outputs,
+                       const Map<std::string, Any> &attrs) {
   auto i = cast<Vector>(inputs[0]).array();
   *(float *)(outputs[0].buffer_->get()) = i.mean();
 }

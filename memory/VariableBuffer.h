@@ -50,6 +50,5 @@ class CpuVariableBuffer : public VariableBuffer {
     size_ = newSize;
   }
 };
-
 }
 }

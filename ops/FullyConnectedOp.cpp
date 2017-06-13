@@ -3,7 +3,8 @@
 namespace nnet {
 namespace eigen_ops {
 
-static void FCOpImpl(const SmallVec<Variable> &inputs, SmallVec<Variable> &outputs, const Map<std::string, Any> &attrs) {
+static void FCOpImpl(const SmallVec<Variable> &inputs, SmallVec<Variable> &outputs,
+                     const Map<std::string, Any> &attrs) {
   auto X = cast<Matrix>(inputs[0]);
   auto W = cast<Matrix>(inputs[1]);
   auto O = cast<Matrix>(outputs[0]);

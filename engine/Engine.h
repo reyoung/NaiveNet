@@ -55,7 +55,7 @@ class NaiveEngine : public Engine {
   void printMean(NameMappingFN fn = nullptr) const override;
 
  private:
-  void accessVar(NameMappingFN fn, std::function<void(Variable &)> tensorFN) const;
+  void accessVar(NameMappingFN fn, std::function<void(Variable&)> tensorFN) const;
 };
 }
 }

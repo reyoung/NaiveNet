@@ -22,7 +22,7 @@ static void softmaxGradImpl(const SmallVec<Variable> &inputs, SmallVec<Variable>
   auto DY = cast<Matrix>(inputs[1]);
   auto DX = cast<Matrix>(outputs[0]);
   DX.array() = DY.array();
-  for (size_t i=0; i<inputs[0].attr_->dims_[0]; ++i) {
+  for (size_t i = 0; i < inputs[0].attr_->dims_[0]; ++i) {
     float dot = Y.row(i).dot(DY.row(i));
     DX.row(i).array() -= dot;
   }

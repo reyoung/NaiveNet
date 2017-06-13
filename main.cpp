@@ -6,10 +6,10 @@
 #include <mnist/mnist_reader.hpp>
 #include "engine/Engine.h"
 #include "graph/ComputationGraph.h"
+#include "memory/Workspace.h"
 #include "misc/CastEigen.h"
 #include "misc/Error.h"
 #include "misc/InitFunction.h"
-#include "memory/Workspace.h"
 
 namespace nnet {
 namespace api {
@@ -47,14 +47,14 @@ class GraphBuilder {
   }
 
   graph::VariableAttrPtr crossEntropy(const std::string& paramPrefix, graph::VariableAttrPtr input,
-                                    graph::VariableAttrPtr label) {
+                                      graph::VariableAttrPtr label) {
     auto loss = graph_->createOrResizeVar(paramPrefix + ".output", {0}, true, graph::kFLOAT32);
     addOp("cross_entropy", {input, label}, {loss});
     return loss;
   }
 
   graph::VariableAttrPtr errorRate(const std::string& paramPrefix, graph::VariableAttrPtr prediction,
-                                 graph::VariableAttrPtr label) {
+                                   graph::VariableAttrPtr label) {
     auto errorRate = graph_->createOrResizeVar(paramPrefix, {0}, false, graph::kFLOAT32);
     addOp("error_rate", {prediction, label}, {errorRate});
     return errorRate;
@@ -67,8 +67,8 @@ class GraphBuilder {
   }
 
   graph::VariableAttrPtr fullyConnected(const std::string& paramPrefix, graph::VariableAttrPtr input, size_t size,
-                                      bool withBias = true, const ActivationType& act = kSigmoid,
-                                      bool allocParam = true) {
+                                        bool withBias = true, const ActivationType& act = kSigmoid,
+                                        bool allocParam = true) {
     CHECK_EQ(input->dims_.size(), 2UL);
     auto layerWidth = input->dims_[1];
 
@@ -163,9 +163,9 @@ int main() {
     TrainMnistOnePass(10);
   }
 
-  float A[]  = { 5, 8, 3, 6 };
-  int IA[] = { 0, 0, 2, 3, 4 };
-  int JA[] = { 0, 1, 2, 1 };
+  float A[] = {5, 8, 3, 6};
+  int IA[] = {0, 0, 2, 3, 4};
+  int JA[] = {0, 1, 2, 1};
 
   Eigen::Map<Eigen::SparseMatrix<float, Eigen::RowMajor>> sm(4, 4, 4, IA, JA, A);
 

@@ -17,7 +17,7 @@ static void randomize(const nnet::graph::Variable& t, int min_value, int max_val
   std::random_device dev;
   std::mt19937 engine(dev());
   std::uniform_int_distribution<int> dist(min_value, max_value);
-  for (size_t i=0; i< nnet::details::product(t.attr_->dims_); ++i) {
+  for (size_t i = 0; i < nnet::details::product(t.attr_->dims_); ++i) {
     buf[i] = dist(engine);
   }
 }
@@ -27,14 +27,14 @@ static void randomizeProb(const nnet::graph::Variable& t) {
   std::random_device dev;
   std::mt19937 engine(dev());
   std::uniform_real_distribution<float> dist(0.0f, 2.0f);
-  for (size_t r=0; r<t.attr_->dims_[0]; ++r) {
+  for (size_t r = 0; r < t.attr_->dims_[0]; ++r) {
     float rowSum = 0.0;
-    for (size_t c=0; c<t.attr_->dims_[1]; ++c) {
-      buf[r*t.attr_->dims_[1] + c] = dist(engine);
-      rowSum += buf[r*t.attr_->dims_[1] + c];
+    for (size_t c = 0; c < t.attr_->dims_[1]; ++c) {
+      buf[r * t.attr_->dims_[1] + c] = dist(engine);
+      rowSum += buf[r * t.attr_->dims_[1] + c];
     }
-    for (size_t c=0; c<t.attr_->dims_[1]; ++c) {
-      buf[r*t.attr_->dims_[1] + c] /= rowSum;
+    for (size_t c = 0; c < t.attr_->dims_[1]; ++c) {
+      buf[r * t.attr_->dims_[1] + c] /= rowSum;
     }
   }
 }
@@ -142,12 +142,12 @@ TEST_CASE("GradientCheck", "check_all") {
           gcPoint = input.size() - 1;
         }
       }
-      auto & attr = input.back();
+      auto& attr = input.back();
       if (attr == nullptr) continue;
       if (eachInput.size() == 5UL) {
         randomize(workspace.getVar(attr));
       } else {
-        nlohmann::json & randomOption = eachInput[5];
+        nlohmann::json& randomOption = eachInput[5];
         if (attr->type_ == nnet::graph::kINT32) {
           int min = randomOption["min_value"];
           int max = randomOption["max_value"];

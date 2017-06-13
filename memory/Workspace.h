@@ -6,7 +6,7 @@ namespace nnet {
 namespace memory {
 
 class Workspace final {
-public:
+ public:
   Map<std::string, std::shared_ptr<VariableBuffer>> varBuffers_;
 
   Workspace() = default;
@@ -23,16 +23,14 @@ public:
     }
   }
 
-  std::shared_ptr<VariableBuffer> operator()(const graph::VariableAttrPtr & attr) {
+  std::shared_ptr<VariableBuffer> operator()(const graph::VariableAttrPtr& attr) {
     size_t sz = details::product(attr->dims_);
     static_assert(sizeof(float) == sizeof(int), "");
     sz *= sizeof(float);
     return createOrResizeBuffer(attr->name_, sz, kDEVICE_CPU);
   }
 
-  graph::Variable getVar(const graph::VariableAttrPtr &attr) {
-    return {attr, this->operator()(attr)};
-  }
+  graph::Variable getVar(const graph::VariableAttrPtr& attr) { return {attr, this->operator()(attr)}; }
 
   std::shared_ptr<VariableBuffer> createOrResizeBuffer(const std::string& name, size_t size, Device dev) {
     auto it = varBuffers_.find(name);
@@ -44,8 +42,6 @@ public:
       return createBuffer(name, size, dev);
     }
   }
-
 };
-
 }
 }

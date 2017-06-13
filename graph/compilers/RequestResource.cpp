@@ -4,9 +4,9 @@
 
 namespace nnet {
 namespace graph {
-static void reqRes(Graph &g, const Map <std::string, Any> &attrs) {
-  auto w = any_cast<memory::Workspace* >(attrs.at("workspace"));
-  for ( auto & t : g.variables_){
+static void reqRes(Graph &g, const Map<std::string, Any> &attrs) {
+  auto w = any_cast<memory::Workspace *>(attrs.at("workspace"));
+  for (auto &t : g.variables_) {
     (*w)(t.second);
   }
 }

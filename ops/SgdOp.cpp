@@ -3,7 +3,8 @@
 namespace nnet {
 namespace eigen_ops {
 
-static void SgdOpImpl(const SmallVec<Variable> &inputs, SmallVec<Variable> &outputs, const Map<std::string, Any> &attrs) {
+static void SgdOpImpl(const SmallVec<Variable> &inputs, SmallVec<Variable> &outputs,
+                      const Map<std::string, Any> &attrs) {
   auto V = cast<Vector>(inputs[0]).array();
   auto G = cast<Vector>(inputs[1]).array();
   auto Target = cast<Vector>(outputs[0]).array();

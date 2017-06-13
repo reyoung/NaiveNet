@@ -30,7 +30,11 @@ class Constraints final : public BaseConstraints {
   }
 
   Constraints<T>& defaultValue(const T& defaultVal) {
-    return add([=](T* attr, bool set) { if(!set){*attr = defaultVal;} });
+    return add([=](T* attr, bool set) {
+      if (!set) {
+        *attr = defaultVal;
+      }
+    });
   }
 
   void check(const std::string& name, Map<std::string, Any>* attrs) override {
@@ -125,8 +129,8 @@ class OpMeta final {
  public:
   using ShapeInfererFN =
       std::function<void(const SmallVec<VariableAttrPtr>& inputs, const SmallVec<VariableAttrPtr>& outputs)>;
-  using RunOnDeviceFN =
-      std::function<void(const SmallVec<Variable>& inputs, SmallVec<Variable>& outputs, const Map<std::string, Any> attrs)>;
+  using RunOnDeviceFN = std::function<void(const SmallVec<Variable>& inputs, SmallVec<Variable>& outputs,
+                                           const Map<std::string, Any> attrs)>;
 
   using GradFN = std::function<SmallVec<Op>(
       const SmallVec<VariableAttrPtr>& inputs, const SmallVec<VariableAttrPtr>& outputs,
@@ -147,7 +151,7 @@ class Graph final {
   SmallVecN<Op, 10> ops_;
 
   template <bool failWhenMismatchDims = false>
-  VariableAttrPtr createOrResizeVar(const std::string &name, const SmallVec<size_t> &dim, bool need_backward,
+  VariableAttrPtr createOrResizeVar(const std::string& name, const SmallVec<size_t>& dim, bool need_backward,
                                     VariableType type) {
     auto attr = std::make_shared<VariableAttr>(name, dim, type, need_backward);
     auto it = variables_.find(name);
@@ -164,7 +168,6 @@ class Graph final {
     }
     return attr;
   }
-
 };
 
 using CompileGraphFN = std::function<void(Graph&, const Map<std::string, Any>&)>;

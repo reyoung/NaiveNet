@@ -3,7 +3,8 @@
 namespace nnet {
 namespace eigen_ops {
 
-static void XEOpImpl(const SmallVec<Variable> &inputs, SmallVec<Variable> &outputs, const Map<std::string, Any> &attrs) {
+static void XEOpImpl(const SmallVec<Variable> &inputs, SmallVec<Variable> &outputs,
+                     const Map<std::string, Any> &attrs) {
   auto p = (float *)(inputs[0].buffer_->get());
   auto l = (int *)(inputs[1].buffer_->get());
   auto loss = (float *)(outputs[0].buffer_->get());

@@ -18,10 +18,10 @@ void NaiveEngine::randomize(Engine::NameMappingFN fn) const {
     fn = castFN(&Engine::getParamInGraph);
   }
 
-  this->accessVar(fn, [](Variable &var) {
+  this->accessVar(fn, [](Variable& var) {
     std::uniform_real_distribution<float> generator(-1.0, 1.0);
     LOG(INFO) << "Randomize " << var.attr_->name_;
-    float *buf = (float *) var.buffer_->get();
+    float* buf = (float*)var.buffer_->get();
     for (size_t i = 0; i < var.buffer_->getSize() / sizeof(float); ++i) {
       buf[i] = generator(getGenerator());
     }
@@ -32,7 +32,7 @@ void NaiveEngine::resetOrCreateGradient(Engine::NameMappingFN fn) const {
   if (!fn) {
     fn = castFN(&Engine::getGradInGraph);
   }
-  this->accessVar(fn, [](Variable &var) {
+  this->accessVar(fn, [](Variable& var) {
     if (var.attr_->specialResetFunction_) {
       var.attr_->specialResetFunction_(var);
     } else {
@@ -42,7 +42,7 @@ void NaiveEngine::resetOrCreateGradient(Engine::NameMappingFN fn) const {
   });
 }
 
-static SmallVec<Variable> toVar(memory::Workspace &workspace, const SmallVec<graph::VariableAttrPtr> &vars) {
+static SmallVec<Variable> toVar(memory::Workspace& workspace, const SmallVec<graph::VariableAttrPtr>& vars) {
   SmallVec<Variable> retv;
   for (auto iptAttr : vars) {
     retv.emplace_back();
@@ -98,14 +98,14 @@ void NaiveEngine::printMean(NameMappingFN fn) const {
   if (!fn) {
     fn = castFN(&Engine::getGradInGraph);
   }
-  this->accessVar(fn, [](Variable &var) {
+  this->accessVar(fn, [](Variable& var) {
     auto arr = eigen::cast<eigen::Vector>(var).array();
     float mean = arr.mean();
     LOG(INFO) << var.attr_->name_ << " mean = " << mean;
   });
 }
 
-void NaiveEngine::accessVar(NameMappingFN fn, std::function<void(Variable &)> tensorFN) const {
+void NaiveEngine::accessVar(NameMappingFN fn, std::function<void(Variable&)> tensorFN) const {
   for (auto& t : graph_.variables_) {
     auto var = fn(t.first);
     if (var != nullptr) {
